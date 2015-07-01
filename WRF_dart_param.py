@@ -49,47 +49,11 @@ flag_direct_netcdf_io = True       # Use experimental DART IO to read/write
 #   model itself
 #
 #**************************************************************
-
-model_Nx1       = 560           # number of x grid points
-model_Ny1       = 420           # number of y grid points
-model_Nz1       = 51            # number of grid points in z (specify levels below)
-model_gridspx1  = 3000          # gridspacing in x (in meters!!!)
-model_gridspy1  = 3000          # gridspacing in y (in meters!!!)
-dt              = 20           # model time step (in sec)
-	
-model_proj      = 'lambert'     # model projection
-model_centlat   = 39.5           # Center latitude of the model (don't forget (.))
-model_centlon   = -80.25         # center longitude of model
-model_stdlat1   = 38.5           # standard latitude 1
-model_stdlat2   = 38.5          # standard latitude 2
-model_stdlon    = -92.5        # standard longitude
-
-#**************************************************************
-#
-#   This set of parameters deals with nested domains,
-#   moving and fixed
-#
-#**************************************************************
-
 max_dom            = 1         # maximum number of domains
-
-model_Nx2          = 271        # number of x grid points
-model_Ny2          = 226        # number of y grid points
-model_Nz2          = model_Nz1  # number of y grid points
-model_gridspx2     = 4000      # gridspacing in x (in meters!!!)
-model_gridspy2     = 4000      # gridspacing in y (in meters!!!)
-model_origin_ll_i2 = 93         # lower-left i of nested domain in parent
-model_origin_ll_j2 = 50         # lower-left j of nested domain in parent
-model_origin_ur_i2 = 61         # upper-right i of nested domain in parent
-model_origin_ur_j2 = 48         # upper-right j of nested domain in parent
-
-model_radt2        = 30         # radiation time step for the nest
-model_cu_phys2     = 1          # cumulus scheme for the nest
-	
-move_nest_domain   = False      # True to use a moving nest domain (NOT ENABLED)
-vortex_interval    = 15         # time to update vortex position (NOT ENABLED)
-vortex_speed       = 20          # maximum speed of vortex (NOT ENABLED)
-
+dt                 = 20           # model time step (in sec)
+grid_resolutions   = [3000,1000]
+wrfout_int        = 60           # Interval to write wrfout files (in MINUTES)
+dlbc              = 60        	 # Interval of global boundary conditions (in MINUTES)
 #**************************************************************
 #
 #   This set of parameters deals with the EnKF parameters 
@@ -97,15 +61,12 @@ vortex_speed       = 20          # maximum speed of vortex (NOT ENABLED)
 #   original papers or Hamill's review paper.
 #
 #**************************************************************
-
 date_start        = '2014072600' # Start of the experiment (YYYYMMDDHH)
 date_end          = '2014072912' # End of the experiment (YYYYMMDDHH)
 Ne                = 50           # Number of ensemble members
 fct_len           = 60          # Time between 2 assimilation (in MINUTES)
 N_assim           = 500          # Number of assimilations (spinup=0)
 N_assim_max       = 500          # Maximum number of assimilations 
-dlbc              = 60        	 # Interval of global boundary conditions (in MINUTES)
-wrfout_int        = 60           # Interval to write wrfout files (in MINUTES)
 
 assim_start       = 1          	 # Cycle time to start assimilation
 assim_interval    = 1       	 # how often to assimilate obs (1=every cycle) (NOT ENABLED)
@@ -119,6 +80,10 @@ assim_infl_meth   = 1          	 # inflation method (see README file for options
 #assim_inf2='0.25'            	 # inflation factor II (see README file for options)
 #assim_bmeth='3'         	 # boundary method (see README file for options) (NOT ENABLED)
 
+# digital filtering options
+use_dfi = 0                             # DFI option to use (0 is none)
+dfi_bckstop_window  = 30                # integrate backward in MINUTES
+dfi_fwdstop_window  = 15                # integrate forward  in MINUTES
 
 
 
@@ -132,41 +97,6 @@ assim_infl_meth   = 1          	 # inflation method (see README file for options
 # 3 can be used, but changing this value here doesn't change anything
 init_method   = 2          # Method to initialize the ensemble 
                            # (1=cts, 2=fcp, 3=parent ensemble)
-
-
-#**************************************************************
-#
-#   Change the settings in this section if you are generating 
-#   ensemble boundary conditions from WRF 3D-Var perturbations
-#   assim_bmeth = 3
-#
-#**************************************************************
-# assim_bmeth = 3 is the only type supported.  Can use BCs from a parent domain,
-# and these parameters won't affect that.
-# These paramters only affect the pert_wrf_bc sequence
-
-autocorr_fcp  = 0.50           # autocorrelation coefficient between two boundary times
-fcp_scale_bp  = 1.60           # factor to scale boundary perturbations
-fcp_cov_scale = 2.0            # horizontal scale of perturbations (0.75 def)
-fcp_npert     = str(4*int(Ne)) # number of perturbations to generate
-bc_pscale     = 0.80           # perturbation scale for WRF-VAR 3 hr forecast (formerly bc_pert_scale)
-bc_hscale     = 2.00           # horizontal scale for WRF-VAR 3 hr forecast
-bc_vscale     = 1.50           # vertical scale for WRF-VAR 3 hr forecast
-bc_pscale_vel   = 0.000001           # perturbation scale for WRF-VAR 3 hr forecast (formerly bc_pert_scale)
-bc_hscale_vel   = 0.06           # horizontal scale for WRF-VAR 3 hr forecast
-bc_vscale_vel   = 0.15           # vertical scale for WRF-VAR 3 hr forecast
-bc_pscale_temp  = 0.5           # perturbation scale for WRF-VAR 3 hr forecast (formerly bc_pert_scale)
-bc_hscale_temp  = 0.10           # horizontal scale for WRF-VAR 3 hr forecast
-bc_vscale_temp  = 0.15           # vertical scale for WRF-VAR 3 hr forecast
-bc_pscale_moist = 0.1           # perturbation scale for WRF-VAR 3 hr forecast (formerly bc_pert_scale)
-bc_hscale_moist = 0.10           # horizontal scale for WRF-VAR 3 hr forecast
-bc_vscale_moist = 0.3           # vertical scale for WRF-VAR 3 hr forecast
-bc_pscale_pres  = 0.00000005           # perturbation scale for WRF-VAR 3 hr forecast (formerly bc_pert_scale)
-bc_hscale_pres  = 0.10           # horizontal scale for WRF-VAR 3 hr forecast
-bc_vscale_pres  = 0.15           # vertical scale for WRF-VAR 3 hr forecast
-
-
-
 
 
 
@@ -397,8 +327,6 @@ mpi_numprocs_member = 16                       # Number of processors for member
 mpi_numprocs_filter = 128                       # Number of processors for filter
 mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
                                                           # for member.  Bluefire does
-                                                          # not specify numprocs in the
-                                                          # MPI run command, so make this
                                                           # blank for bluefire
 
 # Extra parameters for running on Bluefire
@@ -413,6 +341,23 @@ NCAR_ADVANCE_PTILE   = '32'                  # How many processes per core on Bl
 
 
 
+
+# A few additional calcualtions
+# Calculate the number of integration time steps
+time_step=str((float(fct_len)*60)/float(dt))
+assim_len=str(float(N_assim)*float(fct_len))
+fct_len_hrs=str(float(fct_len)/60)
+#model_grid_ratio=str(float(model_gridspx2)/float(model_gridspx1))
+#model_timestep_ratio=model_grid_ratio
+gmodnam = 'gfs'
+gmodnamu=os.popen('echo %s | tr "[:lower:]" "[:upper:]"' % gmodnam).readlines()[0][0:-1]
+username=os.popen('whoami').readlines()[0][0:-1]      # user running this experiment
+
+
+# boundary zone width and other parameters
+dlbc_hrs=str(float(dlbc)/60.0)
+
+
 #**************************************************************
 #
 #  These parameters all deal with the WRF model, but 
@@ -425,122 +370,314 @@ NCAR_ADVANCE_PTILE   = '32'                  # How many processes per core on Bl
 #  These parameters are almost exclusively used by
 #  write_namelists.py
 #**************************************************************  
-	
-# physics options
-model_mp_phys        = 8            	# microphysics option 
-model_lw_phys        = 4		# model long wave scheme  (1=RRTM, 3=CAM) 
-model_sw_phys        = 4        	# model short wave scheme (1=RRTM, 3=CAM)
-model_radt           = 30		# radiation time step (in minutes)
-model_sfclay_phys    = 5		# surface layer physics (if = 1, see model_use_surf_flux below)
-model_surf_phys      = 3		# land surface model
-model_pbl_phys       = 5		# pbl physics   
-model_bldt           = 0		# boundary layer time steps (0 : each time steps, in min)
-model_cu_phys        = 0     		# cumuls param
-model_cudt           = 5          	# cumuls time step
-model_use_surf_flux  = 1   	        # 1 is yes, 0 is no (only works when model_sfclay_phys=1)
-model_use_snow       = 1		# 1 is yes, 0 is no (only works when model_sfclay_phys=1)
-model_use_cloud      = 1		# for lw_phys = 1 and sw_phys = 1 only.
-model_sf_urban_phys  = 0		# urban physics (0, 1, 2)
-model_mp_zero_out    = 2		# for non-zero mp_physics options, DO NOT CHANGE
-model_mp_zero_out_thresh= '1.e-12'
-model_maxiens        = 1		# DO NOT CHANGE THESE
-model_maxens         = 3		# DO NOT CHANGE THESE
-model_maxens2        = 3		# DO NOT CHANGE THESE
-model_maxens3        = 16		# DO NOT CHANGE THESE
-model_ensdim         = 144		# DO NOT CHANGE THESE
-if model_lw_phys == 3 and model_sw_phys == 3:
-	model_cam_abs_freq_s  = 21600   # FOR CAM RADIATION SCHEME ONLY 
-	model_levsiz          = 59      # FOR CAM RADIATION SCHEME ONLY
-	model_paerlev         = 29      # FOR CAM RADIATION SCHEME ONLY 
-	model_cam_abs_dim1    = 4       # FOR CAM RADIATION SCHEME ONLY 
 
-# dynamics options
-model_w_damping      = 1                # vertical velocity damping (1=ON, 0=OFF)
-model_diff_opt       = 1                # turbulence and mixing option
-model_diff_6thopt    = 2                # numerical hyperdiffusion option
-model_diff_6thfact   = 0.25	        # numerical diffusion factor
-model_damp_opt       = 3                # upper level damping option
-model_dampcoef       = 0.2              # damping coefficient
-model_zdamp          = 5000.            # damping depth from model top (in meters)
-model_km_opt         = 4                # eddy coeff. option
-model_khdif          = 0                # horiz. diffusion const.
-model_kvdif          = 0                # vert. diffusion const.
-model_smdiv          = 0.1              # divergence damping
-model_emdiv          = 0.01             # external mode filter
-model_epssm          = 0.1              # time-off centering for vert. sound waves
-model_pd_moist       = 1                # pos. definite advection for moisture fields
+#### WPS NAMELIST ####
+wps_namelist = {}
+wps_namelist['share'] = {
+    'wrf_core'         : 'ARW',
+    'max_dom'          : max_dom,
+    'interval_seconds' : dlbc*60,
+    'io_form_geogrid'  : 2,
+    }
 
-# time control options
-model_debug_level    = 0 		# WRF model debug_level 
-model_num_in_output  = 1 
+wps_namelist['geogrid'] = {
+    'parent_id'         :   [1] + range(1,max_dom),
+    'parent_grid_ratio' :   [int(grid_resolutions[0] / n) for n in grid_resolutions],
+    'i_parent_start'    :   [0,  93],
+    'j_parent_start'    :   [0,  50],
+    'e_we'              :   [560, 271],
+    'e_sn'              :   [420, 226],
+    'geog_data_res'     :   ['30s']*max_dom,
+    'dx'                :   grid_resolutions[0],
+    'dy'                :   grid_resolutions[0],
+    'map_proj'          :   'lambert',
+    'ref_lat'           :   39.5,
+    'ref_lon'           :   -80.25,
+    'truelat1'          :   38.5,
+    'truelat2'          :   38.5,
+    'stand_lon'         :   -92.5,
+    'geog_data_path'    : dir_src_wps_geog,
+    }
 
-# domains options
-# length of model_sigma must match model_Nz above
-#model_sigma='1.000, 0.995, 0.990, 0.985, 0.980, 0.970, 0.960, 0.950, 0.940, 0.930, 0.920, 0.910, 0.900, 0.880, 0.860, 0.830, 0.800, 0.770, 0.740, 0.710, 0.680, 0.640, 0.600, 0.560, 0.520, 0.480, 0.440, 0.400, 0.360, 0.320, 0.280, 0.240, 0.200, 0.160, 0.120, 0.080, 0.040, 0.000' 
-model_sigma='1.0000, 0.9980, 0.9940, 0.9870, 0.9750, 0.9590, 0.9390, 0.9160, 0.8920, 0.8650, 0.8350, 0.8020, 0.7660, 0.7270, 0.6850, 0.6400, 0.5920, 0.5420, 0.4970, 0.4565, 0.4205, 0.3877, 0.3582, 0.3317, 0.3078, 0.2863, 0.2670, 0.2496, 0.2329, 0.2188, 0.2047, 0.1906, 0.1765, 0.1624, 0.1483, 0.1342, 0.1201, 0.1060, 0.0919, 0.0778, 0.0657, 0.0568, 0.0486, 0.0409, 0.0337, 0.0271, 0.0209, 0.0151, 0.0097, 0.0047, 0.0000,'
-model_pres_top =  5000.             # Fills in p_top_requested   
-  
-# boundary control options
-model_spec_zone     = 1                 # boundary points specified by outer model
-model_relax_zone    = 4                 # boundary points with mix of dynamics, outer model
-model_bdy_width     = model_spec_zone + model_relax_zone
+wps_namelist['ungrib'] = {
+    'out_format' : 'WPS',
+    'prefix'     : 'FILE',
+    }
 
-# digital filtering options
-model_dfi_opt       = 0                 # DFI Scheme (0: NO DFI, 1-3)
-model_dfi_nfilter   = 7                 # filter type (0-7)
-model_dfi_write_filt_input = '.true.'   # write filtered wrfinput file at initialization time
-dfi_bckstop_window  = 30                # integrate backward in MINUTES
-dfi_fwdstop_window  = 15                # integrate forward  in MINUTES
+wps_namelist['metgrid'] = {
+    'fg_name'         : 'FILE',
+    'io_form_metgrid' : 2,
+    }
 
-#************************************
-# DO NOT MODIFY BELOW
-#************************************
+# WRF NAMELIST
+wrf_namelist = {}
+wrf_namelist['time_control'] = {
+    'input_from_file'    :  [True] * max_dom,
+    'history_interval'   :  [wrfout_int] * max_dom,
+    'frames_per_outfile' :  [1] * max_dom,
+    'restart'            : False,
+    'restart_interval'   : 5000,
+    'io_form_history'    : 2,
+    'io_form_restart'    : 2,
+    'io_form_input'      : 2,
+    'io_form_boundary'   : 2,
+    'io_form_auxinput2'  : 2,
+    'debug_level'        : 0,
+    }
 
-# Some useful nco utilities
-ncks_bin='`which ncks`'
-ncra_bin='`which ncra`'
-ncwa_bin='`which ncwa`'
-ncflint_bin='`which ncflint`'
-ncrcat_bin='`which ncrcat`'
-ncrename_bin='`which ncrename`'
+wrf_namelist['domains'] = {
+    'time_step'               : dt,
+    'time_step_fract_num'     : 0,
+    'time_step_fract_den'     : 1,
+    'max_dom'                 : max_dom,
+    's_we'                    : [1] * max_dom,
+    'e_we'                    : wps_namelist['geogrid']['e_we'],
+    's_sn'                    : [1] * max_dom,
+    'e_sn'                    : wps_namelist['geogrid']['e_sn'],
+    's_vert'                  : [1] * max_dom,
+    'e_vert'                  : [51] * max_dom,
+    'dx'                      : grid_resolutions,
+    'dy'                      : grid_resolutions,
+    'grid_id'                 : range(1,max_dom+1),
+    'parent_id'               : range(max_dom),
+    'i_parent_start'          : wps_namelist['geogrid']['i_parent_start'],
+    'j_parent_start'          : wps_namelist['geogrid']['j_parent_start'],
+    'parent_grid_ratio'       : wps_namelist['geogrid']['parent_grid_ratio'],
+    'parent_time_step_ratio'  : wps_namelist['geogrid']['parent_grid_ratio'],
+    'feedback'                : 0,
+    'smooth_option'           : 0,
+    'lagrange_order'          : 1,
+    'interp_type'             : 1,
+    'hypsometric_opt'         : 2,
+    'lowest_lev_from_sfc'     : False,
+    'force_sfc_in_vinterp'    : 1,
+    'zap_close_levels'        : 500,
+    'smooth_cg_topo'          : True,
+    'sfcp_to_sfcp'            : True,
+    'use_levels_below_ground' : True,
+    'adjust_heights'          : True,
+    'eta_levels'              : [1.0000, 0.9980, 0.9940, 0.9870, 0.9750, 0.9590, 0.9390, 0.9160, 0.8920, 0.8650, 0.8350, 0.8020, 0.7660, 0.7270, 0.6850, 0.6400, 0.5920, 0.5420, 0.4970, 0.4565, 0.4205, 0.3877, 0.3582, 0.3317, 0.3078, 0.2863, 0.2670, 0.2496, 0.2329, 0.2188, 0.2047, 0.1906, 0.1765, 0.1624, 0.1483, 0.1342, 0.1201, 0.1060, 0.0919, 0.0778, 0.0657, 0.0568, 0.0486, 0.0409, 0.0337, 0.0271, 0.0209, 0.0151, 0.0097, 0.0047, 0.0000],
+    'p_top_requested'         : 5000.,
+    'use_adaptive_time_step'  : True,
+    'step_to_output_time'     : True,
+    'target_cfl'              : 1.2,
+    'max_step_increase_pct'   : 5,
+    'starting_time_step'      : 15,
+    'min_time_step'           : 5,
+    'max_time_step'           : 30,
+    }
 
-# Calculate the number of integration time steps
-time_step=str((float(fct_len)*60)/float(dt))
-assim_len=str(float(N_assim)*float(fct_len))
-fct_len_hrs=str(float(fct_len)/60)
-model_grid_ratio=str(float(model_gridspx2)/float(model_gridspx1))
-model_timestep_ratio=model_grid_ratio
-gmodnam = 'gfs'
-gmodnamu=os.popen('echo %s | tr "[:lower:]" "[:upper:]"' % gmodnam).readlines()[0][0:-1]
-username=os.popen('whoami').readlines()[0][0:-1]      # user running this experiment
+wrf_namelist['physics'] = {
+    'mp_physics'                          : [8] * max_dom,
+    'do_radar_ref'                        : 1,
+    'ra_lw_physics'                       : [4] * max_dom,
+    'ra_sw_physics'                       : [4] * max_dom,
+    'radt'                                : [30] * max_dom,
+    'sf_sfclay_physics'                   : [5] * max_dom,
+    'sf_surface_physics'                  : [3] * max_dom,
+    'CO2TF'                               : 1,
+    'bl_pbl_physics'                      : [5] * max_dom,
+    'bldt'                                : [0] * max_dom,
+    'cu_physics'                          : [0] * max_dom,
+    'cudt'                                : [0] * max_dom,
+    'grav_settling'                       : 0,
+    'isfflx'                              : 1,
+    'ifsnow'                              : 1,
+    'icloud'                              : 1,
+    'surface_input_source'                : 1,
+    'num_soil_layers'                     : 9,
+    'sf_urban_physics'                    : 0,
+    'rdlai2d'                             : True,
+    'usemonalb'                           : True,
+    'seaice_threshold'                    : 271.4,
+    'mp_zero_out'                         : 2,
+    'mp_zero_out_thresh'                  : 1.0E-12,
+    'maxiens'                             : 1,
+    'maxens'                              : 3,
+    'maxens2'                             : 3,
+    'maxens3'                             : 16,
+    'ensdim'                              : 144,
+    'num_land_cat'                        : 21,
+    'mosaic_lu'                           : 1,
+    'mosaic_soil'                         : 1,
+    'prec_acc_dt'                         : 60,
+    }
 
-# Model base temperature
-model_tbase=300.
+wrf_namelist['fdda'] = {}
 
-# Decide on how many soil layers to use depending on LSM model
-if model_surf_phys == '1':
-	model_soil_layers='5'
-elif model_surf_phys == '2':
-  model_soil_layers='4'
-elif model_surf_phys == '3':
-  model_soil_layers='6'
-else:
-  model_soil_layers='0'
+wrf_namelist['dynamics'] = {
+    'rk_ord'                              : 3,
+    'diff_6th_opt'                        : 2,
+    'diff_6th_factor'                     : 0.25,
+    'w_damping'                           : 1,
+    'diff_opt'                            : 1,
+    'km_opt'                              : 4,
+    'damp_opt'                            : 3,
+    'zdamp'                               : 5000.,
+    'base_temp'                           : 300.,
+    'dampcoef'                            : 0.2,
+    'khdif'                               : [0] * max_dom,
+    'kvdif'                               : [0] * max_dom,
+    'smdiv'                               : [0.1] * max_dom,
+    'emdiv'                               : [0.01] * max_dom,
+    'epssm'                               : [0.1] * max_dom,
+    'time_step_sound'                     : [4] * max_dom,
+    'non_hydrostatic'                     : [True] * max_dom,
+    }
+
+wrf_namelist['stoch'] = {
+    'stoch_force_opt'                     : [1] * max_dom,
+    'stoch_vertstruc_opt'                 : [0] * max_dom,
+    'perturb_bdy'                         : 1,
+    'tot_backscat_psi'                    : 1.0E-04,
+    'tot_backscat_t'                      : 5.0E-05,
+    'ztau_psi'                            : 3600.0,
+    'ztau_t'                              : 3600.0,
+    'rexponent_psi'                       : -1.83,
+    'rexponent_t'                         : -1.83,
+    'kminforc'                            : 1,
+    'lminforc'                            : 1,
+    'kminforct'                           : 4,
+    'lminforct'                           : 4,
+    }
+
+wrf_namelist['bdy_control'] = {
+    'spec_bdy_width'                      : 5,
+    'spec_zone'                           : 1,
+    'relax_zone'                          : 4,
+    'specified'                           : [True] + [False] * (max_dom-1),
+    'nested'                              : [False] + [True] * (max_dom-1),
+    }
+
+wrf_namelist['grib2'] = {}
+
+wrf_namelist['namelist_quilt'] = {
+    'nio_tasks_per_group' : 0,
+    'nio_groups' : 1,
+    }
+
+wrf_namelist['dfi_control'] = {
+    'dfi_opt'                             : use_dfi,
+    'dfi_nfilter'                         : 7,
+    'dfi_write_filtered_input'            : True,
+    'dfi_write_dfi_history'               : False,
+    'dfi_time_dim'                        : 1000,
+    }
 
 
+wrf_namelist['diags'] = {
+  'p_lev_diags'                         : 0,
+  'num_press_levels'                    : 5,
+  'press_levels'                        : [92500, 85000, 70000, 50000, 25000],
+  'use_tot_or_hyd_p'                    : 2,
+  }
 
-# boundary zone width and other parameters
-assim_bzw='model_spec_zone+model_relax_zone'  
-assim_lgts='anal_len_bc'
-dlbc_hrs=str(float(dlbc)/60.0)
+# Now the WRF-VAR part of the namelist
+# (Still in namelist.input)
+
+wrf_namelist['wrfvar1'] = {
+    'check_max_iv_print'     : False,
+    'write_increments'       : False,
+    }
+wrf_namelist['wrfvar2'] = {}
+wrf_namelist['wrfvar3'] = {}
+wrf_namelist['wrfvar4'] = {
+    'use_synopobs'    : False,
+    'use_shipsobs'    : False,
+    'use_metarobs'    : False,
+    'use_soundobs'    : False,
+    'use_pilotobs'    : False,
+    'use_airepobs'    : False,
+    'use_geoamvobs'   : False,
+    'use_polaramvobs' : False,
+    'use_bogusobs'    : False,
+    'use_buoyobs'     : False,
+    'use_profilerobs' : False,
+    'use_satemobs'    : False,
+    'use_gpspwobs'    : False,
+    'use_gpsrefobs'   : False,
+    'use_qscatobs'    : False,
+    'use_radar_rv'    : False,
+    'use_radar_rf'    : False,
+    'use_airsretobs'  : False,
+    }
+
+wrf_namelist['wrfvar5'] = {
+    'check_max_iv' : False,
+    }
+
+wrf_namelist['wrfvar6'] = {
+    'max_ext_its' : 1,
+    'ntmax'       : 200,
+    'eps'         : 0.01,
+    }
+
+wrf_namelist['wrfvar7'] = {
+    'cv_options'   : 3,
+    'as1'          : [0.000001, 0.06, 0.15],
+    'as2'          : [0.000001, 0.06, 0.15],
+    'as3'          : [0.5, 0.10, 0.15],
+    'as4'          : [0.1, 0.1, 0.3],
+    'as5'          : [0.00000005, 0.10, 0.15],
+    'rf_passes'    : 6,
+    'var_scaling1' : 1.0,
+    'var_scaling2' : 1.0,
+    'var_scaling3' : 1.0,
+    'var_scaling4' : 1.0,
+    'var_scaling5' : 1.0,
+    'len_scaling1' : 1.0,
+    'len_scaling2' : 1.0,
+    'len_scaling3' : 1.0,
+    'len_scaling4' : 1.0,
+    'len_scaling5' : 1.0,
+    'je_factor'    : 1.0,
+    }
+wrf_namelist['wrfvar8'] = {}
+
+wrf_namelist['wrfvar9'] = {
+    'trace_csv'  : False,
+    'use_html'   : False,
+    }
+
+wrf_namelist['wrfvar10'] = {}
+
+wrf_namelist['wrfvar11'] = {
+    'cv_options_hum'   : 1,
+    'check_rh'         : 1,
+    'set_omb_rand_fac' : 1.0,
+    }
+
+wrf_namelist['wrfvar12'] = {}
 
 
-# These variable are used for wrfenkf.nl, their role is same, but names have changed
-bc_pert_scale=bc_pscale
+wrf_namelist['wrfvar13'] = {
+    'vert_corr'     : 2,
+    'vertical_ip'   : 0,
+    'vert_evalue'   : 1,
+    'max_vert_var1' : 99.0,
+    'max_vert_var2' : 99.0,
+    'max_vert_var3' : 99.0,
+    'max_vert_var4' : 99.0,
+    'max_vert_var5' : 0.0,
+    }
 
-# parallel_model flag
-if async == 2: 
-	parallel_model='false'
-elif async == 4: 
-	parallel_model='true'
+wrf_namelist['wrfvar14'] = {}
+
+wrf_namelist['wrfvar15'] = {
+    'num_pseudo'    : 0,
+    }
+
+wrf_namelist['wrfvar16'] = {}
+
+wrf_namelist['wrfvar17'] = {
+    'analysis_type'  : "RANDOMCV",
+    }
+
+wrf_namelist['wrfvar18'] = {}
+wrf_namelist['wrfvar19'] = {}
+wrf_namelist['wrfvar20'] = {}
+wrf_namelist['wrfvar21'] = {}
+wrf_namelist['wrfvar22'] = {}
+wrf_namelist['wrfvar23'] = {}
+
 
