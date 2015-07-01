@@ -19,7 +19,16 @@ def main():
     check_files()
     change_sys_path()
     os.system('chmod +x *.py')
+    make_sub_dirs()
 
+
+def make_sub_dirs():
+    """ Function to go through the directories we expect
+    to find and create them if they don't exist """
+    check_dirs = [dir_longsave, dir_obs, dir_assim]
+    for d in check_dirs:
+        if not os.path.exists(d):
+            os.system('mkdir {:s}'.format(d))
 
 def check_files():
     # Loop through the required files and 
