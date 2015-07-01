@@ -20,10 +20,10 @@ def run_cycle(fdate=fdate, archive=archive_dir):
 def run_assimilation_sequence(fdate):
     """ Switch to the wrfdart directory and run the assimilation sequence for
     this time """
-    curdir = os.getcwd()
-    os.chdir('./wrfdart')
+    #curdir = os.getcwd()
+    #os.chdir('./wrfdart')
     os.system('./submit_filter.py -d {:%Y%m%d%H}'.format(fdate))
-    os.chdir(curdir)
+    #os.chdir(curdir)
     return True
 
 

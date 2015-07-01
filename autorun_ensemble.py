@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os, sys, getopt
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27/wrfdart')
 from WRF_dart_param import *
 from datetime import datetime,timedelta
 import time
@@ -106,9 +105,9 @@ for date in run_datelist:
         print "File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting."          
         exit(0)         
     if date in assim_times:
-        os.chdir('%s/wrfdart' % dir_wrf_dom)
+        #os.chdir('%s/wrfdart' % dir_wrf_dom)
         os.system('./submit_filter.py -d %s -m %d' % (date,mpi_numprocs_filter))
-        os.chdir(dir_wrf_dom)
+        #os.chdir(dir_wrf_dom)
 
     # Run WPS to get new BCs
     #run_wps_sequence(date,deltatime)

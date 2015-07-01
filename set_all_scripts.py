@@ -12,14 +12,13 @@ import os
 
 
 req_files = ['run_member.py','submit_all.py','autorun_ensemble.py','write_namelists.py',\
-             'wrfdart/make_namelist_dart.py','wrfdart/submit_filter.py','make_ensemble.py',\
-             'wrfdart/WRF_dart_param.py','wrfdart/WRF_dart_obtypes.py']
+             'make_namelist_dart.py','submit_filter.py','make_ensemble.py',\
+             'WRF_dart_param.py','WRF_dart_obtypes.py']
 
 def main():
     check_files()
     change_sys_path()
     os.system('chmod +x *.py')
-    os.system('chmod +x wrfdart/*.py')
 
 
 def check_files():
@@ -39,7 +38,7 @@ def change_sys_path():
     # a 'sys.path.append' line and replaces it with one that
     # reflects the current working directory structure
     print "Re-setting wrfdart directory in scripts."
-    new_wrfdart_path = os.getcwd() + '/wrfdart'
+    new_wrfdart_path = os.getcwd()
     for file in req_files:
         print file
         oldfile = open(file, 'r')
@@ -52,9 +51,6 @@ def change_sys_path():
         newfile.close()
         oldfile.close()
         os.system('mv new.temp %s' % file)
-    print "Done."
-
-
 
 
 

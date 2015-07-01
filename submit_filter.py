@@ -41,19 +41,20 @@ POST_CLEAN      = True
 
 def main():
  
-    # We know we are in the right directory, otherwise the import 
-    # of WRF_dart_param would have failed.
+    # First step--write the namelist
+    # Need to know if we are trying to apply adaptive
+    # inflation from the previous time or not.  If we are using it,
+    # Copy in and unzip the previous inflation
+    make_namelist_and_inflate(datein)
+    
+    # Put us in the assimilation directory
+    os.chdir(dir_assim)
 
     if PRE_CLEAN:
         # Start by cleaning up the DART directoy,
         # Only removing old filter_ic_new files
         clean_dart(True, False)
  
-    # First step--write the namelist
-    # Need to know if we are trying to apply adaptive
-    # inflation from the previous time or not.  If we are using it,
-    # Copy in and unzip the previous inflation
-    make_namelist_and_inflate(datein)
 
     if PRE_CHECK and not flag_direct_netcdf_io:
         # Now, check to be sure all filter_ic_old.#### files are in place
@@ -63,16 +64,21 @@ def main():
 
     if RUN_FILTER:
         # We've got the files, so now copy in the observation file 
-        if os.path.exists('../obs/%s_obs_seq.prior' % datein.strftime('%Y%m%d%H')):   
-            os.system('cp ../obs/%s_obs_seq.prior obs_seq.prior' % datein.strftime('%Y%m%d%H'))
+        if os.path.exists('%s/%s_obs_seq.prior' % (dir_obs,datein.strftime('%Y%m%d%H'))):   
+            os.system('cp %s/%s_obs_seq.prior obs_seq.prior' % (dir_obs, datein.strftime('%Y%m%d%H')))
         else:
-            error_handler('Could not find obs/%s_obs_seq.prior' % (datein.strftime('%Y%m%d%H')),\
+            error_handler('Could not find %s/%s_obs_seq.prior' % (dir_obs, datein.strftime('%Y%m%d%H')),\
                           'submit_filter')
 
     
         # Make sure latest filter is linked in
         os.system('rm filter')
         os.system('ln -sf %s/filter filter' % dir_src_dart)
+        
+        # Make sure wrfinput is linked in
+        for dom in range(1,max_dom+1):
+            if not os.path.exists('./wrfinput_d{:02d}'.format(dom)):
+                os.system('ln -sf {:s}/wrfinput_d{:02d} .'.format(dir_wrf_dom, dom))
 
         # Now write the submission script
         qsub_cmd, scriptname = write_filter_submit(datein)
@@ -131,9 +137,8 @@ def make_namelist_and_inflate(datein):
     if datein not in no_adaptive_inf_dates: 
         print "Using adaptive inflation values from previous time"
         os.system('./make_namelist_dart.py -d %s -i' % datein.strftime('%Y%m%d%H'))
-        if os.path.exists('../longsave/%s_prior_inf_ic.gz' % prevdate.strftime('%Y%m%d%H')):
-            os.system('cp ../longsave/%s_prior_inf_ic.gz prior_inf_ic_old.gz' \
-                      % (prevdate.strftime('%Y%m%d%H')))
+        if os.path.exists('{:s}/{:%Y%m%d%H}_prior_inf_ic.gz'.format(dir_longsave, prevdate)):
+            os.system('cp {:s}/{:%Y%m%d%H}_prior_inf_ic.gz {:s}/prior_inf_ic_old.gz'.format(dir_longsave, prevdate, dir_assim))
             os.system('gunzip prior_inf_ic_old.gz')
         else:
             error_handler('Could not find longsave/%s_prior_inf_ic.gz' \
@@ -141,7 +146,7 @@ def make_namelist_and_inflate(datein):
     else:
         print "Using initial values for inflation mean and std"
         os.system('./make_namelist_dart.py -d %s' % datein.strftime('%Y%m%d%H'))
-
+    os.system('cp input.nml {:s}/input.nml'.format(dir_assim))
 
 
 def clean_dart(new_flag, old_flag):
@@ -167,8 +172,8 @@ def archive_files(datem):
     print "#################### ARCHIVING FILES #######################"
     # Run diagnostics on the posterior file
     os.system('ln -sf obs_seq.posterior obs_seq.diag')
-    #if not os.path.exists('obs_diag'):
-    #    os.system('ln -sf %s/obs_diag .' % (dir_)
+    if not os.path.exists('obs_diag'):
+        os.system('ln -sf %s/obs_diag .' % (dir_src_dart))
     os.system('./obs_diag')
     if not os.path.exists('obs_diag_output.nc'):
         print "Failure to produce obs_diag_output.nc!"
@@ -178,6 +183,8 @@ def archive_files(datem):
     os.system('unlink obs_seq.diag')
 
     # Convert the posterior obs sequence file to netcdf format for easier diagnosis later
+    if not os.path.exists('obs_seq_to_netcdf'):
+        os.system('ln -sf %s/obs_seq_to_netcdf .' % (dir_src_dart))
     os.system('./obs_seq_to_netcdf')
     if not os.path.exists('obs_epoch_001.nc'):
         print "Failure to produce obs_epoch_001.nc!"
@@ -218,13 +225,13 @@ def archive_files(datem):
     """
     # LEM -- Revisions here for new diag format, with just the mean and sd
     if os.path.exists('prior_inf_ic_new_mean_d01'):
-        os.system('mv -f prior_inf_ic_new_mean_d01 {:s}/{:%Y%m%d%H}_prior_inf_ic_mean_d01'.format(dir_longsave,datem))
-        os.system('mv -f prior_inf_ic_new_sd_d01 {:s}/{:%Y%m%d%H}_prior_inf_ic_sd_d01'.format(dir_longsave,datem))
+        os.system('mv -f prior_inf_ic_new_mean_d01 {:s}/{:s}_prior_inf_ic_mean_d01'.format(dir_longsave,datem))
+        os.system('mv -f prior_inf_ic_new_sd_d01 {:s}/{:s}_prior_inf_ic_sd_d01'.format(dir_longsave,datem))
     if os.path.exists('mean_d01.nc') and os.path.exists('sd_d01.nc'):
         os.system('ncdiff mean_d01.nc PriorDiag_mean_d01.nc mean_increment.nc')
         os.system('ncdiff sd_d01.nc PriorDiag_sd_d01.nc sd_increment.nc')
-        os.system('mv -f mean_increment.nc {:s}/{:%Y%m%d%H}_mean_increment.nc'.format(dir_longsave,datem))
-        os.system('mv -f sd_increment.nc {:s}/{:%Y%m%d%H}_sd_increment.nc'.format(dir_longsave,datem))
+        os.system('mv -f mean_increment.nc {:s}/{:s}_mean_increment.nc'.format(dir_longsave,datem))
+        os.system('mv -f sd_increment.nc {:s}/{:s}_sd_increment.nc'.format(dir_longsave,datem))
 
 
 
@@ -286,7 +293,7 @@ def make_precip_diag(datem):
     # There should be only one time in the file...skipping that check
     ntimes = 1
     # Copy in input.nml
-    os.system('cp %s/wrfdart/input.nml .' % dir_wrf_dom)
+    #os.system('cp %s/wrfdart/input.nml .' % dir_wrf_dom)
 
     # Run the precip2diag script
     if os.path.exists('precip2diag.out'):
@@ -388,14 +395,14 @@ def write_filter_submit(datein):
         print >>outfile, "set start_time = `date +%s`"
         print >>outfile, 'echo "host is " `hostname`'
         print >>outfile, ""
-        print >>outfile, "cd %s/wrfdart" % dir_wrf_dom
-        print >>outfile, "echo $start_time >& %s/wrfdart/filter_started" % dir_wrf_dom
+        print >>outfile, "cd %s" % dir_wrf_dom
+        print >>outfile, "echo $start_time >& %s/filter_started" % dir_wrf_dom
         print >>outfile, ""
         print >>outfile, "#  run data assimilation system"
         print >>outfile, "setenv TARGET_CPU_LIST -1"
         print >>outfile, "mpirun.lsf job_memusage.exe ./filter"
         print >>outfile, ""
-        print >>outfile, "touch %s/wrfdart/filter_done" % dir_wrf_dom
+        print >>outfile, "touch %s/filter_done" % dir_wrf_dom
         print >>outfile, "set end_time = `date  +%s`"
         print >>outfile,"@ length_time = $end_time - $start_time"
         print >>outfile, 'echo "duration = $length_time"'
@@ -417,7 +424,7 @@ def write_filter_submit(datein):
                          % (mpi_run_command,mpi_numprocs_filter)
         print >>outfile, "os.system('touch filter_done')"
         outfile.close()
-        return ('qsub -pe ompi %d -V -q %s -e /dev/null -o /dev/null' % (mpi_numprocs_filter,queue_filter),\
+        return ('qsub -pe ompi %d -V -q %s -e %s -o %s' % (mpi_numprocs_filter,queue_filter,dir_assim,dir_assim),\
                 'run_filter_mpi.py')
 
     #else:

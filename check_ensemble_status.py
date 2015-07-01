@@ -3,7 +3,6 @@
 # Script that checks the status of the entire model run
 
 import os, sys, datetime, getopt, re
-sys.path.append('./wrfdart')
 
 from WRF_dart_param import *
 resub = False 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, getopt,datetime
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27/wrfdart')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/july27')
 from WRF_dart_param import *
 
 
