@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os, sys, getopt
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27/wrfdart')
 from WRF_dart_param import *
 # Quick grab from WRF_dart_param
 

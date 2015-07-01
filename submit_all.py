@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os, sys
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27/wrfdart')
 from WRF_dart_param import Ne,fct_len,dir_members,dir_utils,dir_longsave,queue_members,mpi_numprocs_member,date_start
 from datetime import datetime, timedelta
 from optparse import OptionParser

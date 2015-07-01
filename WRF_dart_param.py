@@ -8,7 +8,7 @@ import os
 #
 #*******************************************************************************
 
-exp_name='ens_july27'                # Name of the experiment
+exp_name='july27'                # Name of the experiment
  
 #**************************************************************
 #
@@ -364,9 +364,10 @@ ens_bc_pscale='0.65'         # perturbation scale for WRF-VAR 48 hr forecast
 dir            = '/home/disk/pvort/lmadaus/nobackup/WRF' # MAIN DIRECTORY
 dir_wrf_dom    = dir + '/DOMAINS/' + exp_name            # Directory where main experiment is run 
 dir_longsave   = dir_wrf_dom + '/longsave'               # storage directory 
-dir_repository = dir_wrf_dom + '/obs'                    # repository of ICBC's and Obs.
+dir_obs        = dir_wrf_dom + '/obs'                    # repository of obs.
 dir_utils      = dir + '/UTILS/bin'                      # location of utility codes
 dir_members    = dir_wrf_dom + '/mems'                   # members directory
+dir_assim      = dir_wrf_dom + '/assimilation'           # Directory where DART will be run
 
 # Directories where WRF, WRFDA and DART are found
 WRFVARDIR         = dir + '/WRFDA'
@@ -375,7 +376,6 @@ dir_src_wps       = dir + '/WPS'                    # WPS location
 dir_src_wps_geog  = dir + '/DATA/geog'              # Location of geo data for WPS
 dir_src_wrf       = dir + '/WRFV3/main'             # WRF location
 dir_src_wrfvar    = dir + '/WRFDA/var'                  # WRF-VAR location
-dir_src_wrfdart   = dir_wrf_dom + '/wrfdart'        # Root WRF-DART directory
 dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are located
 
 

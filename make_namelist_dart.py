@@ -161,7 +161,7 @@ def set_namelist_sectors():
         'cutoff'                          : cov_cutoff,
         'sort_obs_inc'                    : '.false.',
         'spread_restoration'              : '.false.',
-        'sampling_error_correction'       : '.false.',
+        'sampling_error_correction'       : '.true.',
         'adaptive_localization_threshold' : '1600',
         'print_every_nth_obs'             : '100',
     }
