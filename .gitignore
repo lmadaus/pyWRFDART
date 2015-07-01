@@ -55,3 +55,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Ignore the param and obtypes files
+WRF_dart_param.py
+WRF_dart_obtypes.py
+
