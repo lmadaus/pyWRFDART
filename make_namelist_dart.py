@@ -370,10 +370,10 @@ def set_namelist_sectors():
 
 
     namelist['obs_sequence_tool'] = {
-        'num_input_files'   : '""', 
+        'num_input_files'   : '1', 
         'filename_seq'      : '"{:%Y%m%d%H}_obs_seq.prior"'.format(assim_time),
         'filename_out'      : '"obs_seq.processed"',
-        'filename_seq_list' : '"obfiles.txt"',
+        'filename_seq_list' : '""',
         'first_obs_days'    : '{:d}'.format(first_ob.days), 
         'first_obs_seconds' : '{:d}'.format(first_ob.seconds), 
         'last_obs_days'     : '{:d}'.format(last_ob.days), 

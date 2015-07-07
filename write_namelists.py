@@ -4,7 +4,7 @@ from __future__ import print_function, division
 import os, sys, getopt
 from datetime import datetime, timedelta
 from numpy import arange
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/july27')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27')
 from WRF_dart_param import *
 
 # Set some defaults

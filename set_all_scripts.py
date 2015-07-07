@@ -8,7 +8,7 @@
 # script must be run from the main dir_wrf_dom directory
 
 import os
-
+from WRF_dart_param import dir_longsave, dir_obs, dir_assim
 
 
 req_files = ['run_member.py','submit_all.py','autorun_ensemble.py','write_namelists.py',\
