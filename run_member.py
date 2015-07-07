@@ -3,7 +3,7 @@
 import os, sys
 from datetime import datetime, timedelta
 import re
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/july27')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27')
 from WRF_dart_param import *
 
 
