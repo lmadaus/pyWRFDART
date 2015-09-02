@@ -11,24 +11,26 @@ from ens_dart_param import *
 calcend = 0
 seed_num = 100000
 add_nml_line = False
+irst = 0
+rstnum = 1
+
 
 # Read in command line parameters
-(opts,args) = getopt.getopt(sys.argv[1:],'i:d:l:e:f2p')
+(opts,args) = getopt.getopt(sys.argv[1:],'r:l:')
 for o,a in opts:
-   if o == '-i':
-      today = datetime.datetime.today()
-      date_start = today.strftime('%Y%m%d') + str(a)
-   if o == '-d':
-      date_start = a
-   if o == '-l':
-      calcend = 1
-      lengthdt = datetime.timedelta(hours=int(a))
-   if o == '-e':
-      seed_num = int(a) * 100000
-   if o == '-f':
-      max_dom = 1
-   if o == '-p':
-      add_nml_line = True
+    if o == '-l':
+        # Overwrite fct_len from ens_dart_param
+        fct_len = int(a)
+    elif o == '-r':
+        # Change the restart number to match this file name
+        irst = 1
+        if a.startswith('cm1out_rst'):
+            # Strip the integer from the filename
+            rstnum = int(a.split('_')[-1][:-3])
+        else:
+            # Just read as an integer
+            rstnum = int(a)
+
      
 
 def set_namelist_defaults():
@@ -40,7 +42,7 @@ def set_namelist_defaults():
         'nz'           :  78,
         'nodex'        : 4,
         'nodey'        : 4,
-        'ppnode'       : 16,
+        'ppnode'       : mpi_numprocs_member,
         'timeformat'   : 1,
         'timestats'    : 1,
         'terrain_flag' : False,
@@ -63,8 +65,8 @@ def set_namelist_defaults():
 
     namelist['param2'] = {
      'adapt_dt'  :  1,
-     'irst'      :  0,
-     'rstnum'    :  1,
+     'irst'      :  irst,
+     'rstnum'    :  rstnum,
      'iconly'    :  0,
      'hadvordrs' :  5,
      'vadvordrs' :  5,

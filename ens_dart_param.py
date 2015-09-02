@@ -100,10 +100,9 @@ fct_len            = 60           # Interval to write restart files (in MINUTES)
 exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
 Ne                = 10           # Number of ensemble members
 N_assim           = 500          # Number of assimilations (spinup=0)
-N_assim_max       = 500          # Maximum number of assimilations 
 
 assim_start       = 1          	 # Cycle to start assimilation
-assim_interval    = 1       	 # how often to assimilate obs (1=every cycle) (NOT ENABLED)
+assim_interval    = 1       	 # how often to assimilate obs (1=every cycle)
 inflate_start     = 3            # Which assimlation step to start inflation
 
 ## The only inflation option supported is assim_infl_meth=1
