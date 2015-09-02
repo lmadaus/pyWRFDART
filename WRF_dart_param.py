@@ -8,7 +8,7 @@ import os
 #
 #*******************************************************************************
 
-exp_name='july27'                # Name of the experiment
+exp_name='ens_july27'                # Name of the experiment
  
 #**************************************************************
 #
@@ -27,7 +27,7 @@ flag_make_opcen       = False      # True to interpolate grib files to grid (NOT
 flag_pert_bcs         = True      # True to run pert_wrf_bc.  If false, will still run
                                    # update_wrf_bc
 
-flag_compute_tendency = False      # True to compute the altimeter tendencies for each wrfout
+flag_compute_tendency = True      # True to compute the altimeter tendencies for each wrfout
                                    # and add altimeter tendency to WRF state vector in DART
 flag_make_interpol    = False      # True to perform the interpolation
 flag_keep_raw         = True       # True to keep original wrf files
@@ -306,7 +306,7 @@ dir_src_wps       = dir + '/WPS'                    # WPS location
 dir_src_wps_geog  = dir + '/DATA/geog'              # Location of geo data for WPS
 dir_src_wrf       = dir + '/WRFV3/main'             # WRF location
 dir_src_wrfvar    = dir + '/WRFDA/var'                  # WRF-VAR location
-dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are located
+dir_src_dart      = dir + '/DART_netcdf_io/models/wrf/work'   # Where DART executables are located
 
 
 #**************************************************************

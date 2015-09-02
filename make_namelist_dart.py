@@ -132,7 +132,7 @@ def set_namelist_sectors():
         'inf_upper_bound'             : '{0:f}, {1:f}'.format(infl_ub_prior, infl_ub_post),
         'inf_sd_lower_bound'          : '{0:f}, {1:f}'.format(infl_sd_lb_prior, infl_sd_lb_post),
         'direct_netcdf_read'          : format_true_false(flag_direct_netcdf_io),
-        'direct_netcdf_write'         : format_true_false(flag_direct_netcdf_io),
+        #'direct_netcdf_write'         : format_true_false(flag_direct_netcdf_io),
     }
 
     namelist['io_filenames'] = {
@@ -550,8 +550,11 @@ def make_obs_list(eval=False):
             obs_list.append("'METAR_ALTIMETER'")
             obs_list.append("'LAND_SFC_ALTIMETER'")
             obs_list.append("'MARINE_SFC_ALTIMETER'")
+            obs_list.append("'NCEP_BUFR_MARINE_ALTIMETER'")
+            obs_list.append("'NCEP_BUFR_ALTIMETER'")
         if sfc_alt_tendency[eval]:
             obs_list.append("'METAR_ALTIMETER_TENDENCY'")
+            obs_list.append("'PHONE_ALTIMETER_TENDENCY'")
        #if sfc_verify_alt[eval]:
        #   obs_list.append("'VERIFY_ALTIMETER',"
         if phone_altimeter[eval]:

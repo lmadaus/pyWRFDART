@@ -19,17 +19,17 @@
 use_obs_soundings = False 
 
 rawin_sfc_pres      = (False, False) 
-rawin_sfc_altimeter = (False, False) 
-rawin_wind          = (False, True) 
-rawin_temp          = (False, True) 
-rawin_humidity      = (False, True) 
+rawin_sfc_altimeter = (False, True) 
+rawin_wind          = (False, False) 
+rawin_temp          = (False, False) 
+rawin_humidity      = (False, False) 
 
 
 ### SURFACE OBS ###
 use_obs_surface = True
 
 sfc_altimeter    = (False, True) 
-sfc_alt_tendency = (False, False)
+sfc_alt_tendency = (True, False)
 sfc_verify_alt   = (False, True)
 sfc_pressure     = (False, False) 
 sfc_wind         = (False, True) 
@@ -39,7 +39,7 @@ wunderground_alt = (False, True)
 wunderground_temp = (False, True)
 wunderground_wind = (False, False)
 wunderground_dewp = (False, False)
-phone_altimeter  = (True, False)
+phone_altimeter  = (False, True)
 
 
 
