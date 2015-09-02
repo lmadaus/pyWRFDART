@@ -51,7 +51,7 @@ dir_members    = dir_dom + '/mems'                   # members directory
 dir_assim      = dir_dom + '/assimilation'           # Directory where DART will be run
 
 # Directories where CM1 and DART are found
-dir_src_cm1       = dir + '/cm1/cm1r18/run'
+dir_src_model      = dir + '/cm1/cm1r18/run'        # Where the model executable is located
 dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are located
 
 #**************************************************************
@@ -98,7 +98,7 @@ fct_len            = 60           # Interval to write restart files (in MINUTES)
                                   # This is also the cycling frequency
 
 exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
-Ne                = 50           # Number of ensemble members
+Ne                = 10           # Number of ensemble members
 N_assim           = 500          # Number of assimilations (spinup=0)
 N_assim_max       = 500          # Maximum number of assimilations 
 
