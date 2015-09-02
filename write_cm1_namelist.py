@@ -5,7 +5,7 @@ import os, sys, getopt
 from datetime import datetime, timedelta
 from numpy import arange
 sys.path.append('/glade/p/work/lmadaus/cm1/pyCM1DART')
-from WRF_dart_param import *
+from ens_dart_param import *
 
 # Set some defaults
 calcend = 0
@@ -49,14 +49,14 @@ def set_namelist_defaults():
 
     
     namelist['param1'] = {
-        'dx'       : 1000.0,
-        'dy'       : 1000.0,
+        'dx'       : grid_resolutions,
+        'dy'       : grid_resolutions,
         'dz'       : 290.0,
-        'dtl'      : 5.0,
-        'timax'    : 54000.,
+        'dtl'      : dt,
+        'timax'    : exp_length,
         'run_time' : -999.9,
-        'tapfrq'   : 300.,
-        'rstfrq'   : 21600.,
+        'tapfrq'   : out_int*60,
+        'rstfrq'   : fct_len*60,
         'statfrq'  : 60.,
         'prclfrq'  : 60.,
     }
