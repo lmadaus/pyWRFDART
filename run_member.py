@@ -3,6 +3,7 @@
 import os, sys
 from datetime import datetime, timedelta
 import re
+from netCDF4 import Dataset
 sys.path.append('/glade/p/work/lmadaus/cm1/pyCM1DART')
 from ens_dart_param import *
 
@@ -50,6 +51,9 @@ def main():
     memnum, start, end = get_basic_info() 
     print "START TIME:", start
     print "END TIME:", end
+    # Compute fct_len
+    fct_len = int(end - start)
+
 
     # Check here if the flag_direct_netcdf_io is True.  If so, set the
     # DART_TO_WRF and WRF_TO_DART sequences to False
@@ -71,9 +75,9 @@ def main():
         if start in assim_times:
             # Prepare cm1 to start from a restart
             restart_name = 'cm1out_rst_000001.nc'
-            cm1_prep(memnum,start,restart_name)
+            cm1_prep(memnum,start,end,restart_name)
         else:
-            cm1_prep(memnum,start)
+            cm1_prep(memnum,start,end)
         run_cm1(memnum)
 
     # Do post-MODEL cleanup
@@ -125,7 +129,7 @@ def get_assim_times():
 
     # Make a list of all cycles
     # This list is in minutes since simulation start
-    cycle_times = range(0, exp_length+fct_len, fct_len)
+    cycle_times = range(0, int(exp_length)+int(fct_len), int(fct_len))
 
     # Now whittle this down based on the above
     # Start where requested
@@ -151,8 +155,8 @@ def get_basic_info():
             memnum, start, end """
 
     # Try to read the environment variables
-    start = int(os.environ['STARTINDEX'])
-    end = int(os.environ['ENDINDEX'])
+    start = int(os.environ['STARTTIME'])
+    end = int(os.environ['ENDTIME'])
 
 
     # Try to find the member based on the directory we are in
@@ -221,7 +225,7 @@ def run_dart_to_cm1(mem,start):
 
 
 
-def cm1_prep(mem,start,restart_name=None):
+def cm1_prep(mem,start,end,restart_name=None):
     """ Function to write new namelist.input and check to be
         sure files are in order 
 
@@ -233,7 +237,7 @@ def cm1_prep(mem,start,restart_name=None):
             error_handler('unable to find file {:s} in member {:d} directory'.format(restart_name, mem), 'cm1_prep')
         # Make sure that the restart file is indeed at the correct time
         rstnc = Dataset(restart_name, 'r')
-        time_sec = int(rstnc.variables['time'])
+        time_sec = int(rstnc.variables['time'][0])
         rstnc.close()
         if time_sec != start*60:
             error_handler('restart file {:s} for member {:d} does not match current cycle time: {:d} min.'.format(restart_name, mem, start), 'cm1_prep')
@@ -247,13 +251,13 @@ def cm1_prep(mem,start,restart_name=None):
         os.system('ln -sf {:s}/ens_dart_param.py'.format(dir_dom))
 
     # Find out how long the run should be 
-    dtime = fct_len*60 # fct_len is a global variable imported from ens_dart_param
+    dtime = int(end-start)
 
     # Write the namelist
     if restart_name is not None:
         os.system('./write_cm1_namelist.py -r {:s} -l {:d}'.format(restart_name, dtime))
     else:
-        os.system('./write_cm1_namelist.py -l {:d}'.format(restart_name, dtime))
+        os.system('./write_cm1_namelist.py -l {:d}'.format(dtime))
     if not os.path.exists('namelist.input'):
         error_handler('Unable to find namelist.input','wrf_prep')
 
@@ -272,7 +276,7 @@ def run_cm1(mem):
     if not os.path.exists('cm1.exe'):
         os.system('ln -sf {:s}/cm1.exe'.format(dir_src_model))
     #os.system('mpirun -np %d wrf.exe' % mp_numprocs_member)
-    os.system('%s %s ./wrf.exe' % (mpi_run_command,mpi_numprocs_flag))
+    os.system('%s %s ./cm1.exe' % (mpi_run_command,mpi_numprocs_flag))
 
 
 
@@ -282,9 +286,9 @@ def post_model_cleanup(mem,start,end,restart_name=None):
     print "Beginning post-model cleanup"
 
     # First, verify that CM1 finished correctly
-    if restart_num is not None:
+    if restart_name is not None:
         if not os.path.exists(restart_name):
-            error_handler('Restart file {:s} not found for member {:d}'.format(restart_name, mem))
+            error_handler('Restart file {:s} not found for member {:d}'.format(restart_name, mem),'post_model_cleanup')
 
     print "CM1 restart file found at endtime.  Success!"    
     # Check the rsl.error files to be doubly sure
@@ -300,7 +304,7 @@ def post_model_cleanup(mem,start,end,restart_name=None):
         # Write a new dart namelist for this time
         nml_good = write_dart_namelist(mem,end)
         if not nml_good:
-            error_handler('Trouble writing input.nml for member %d' % mem, 'post_wrf_cleanup')
+            error_handler('Trouble writing input.nml for member %d' % mem, 'post_model_cleanup')
 
         for dn in range(int(max_dom)+1)[1:]:
             # Don't overwrite the wrfinput_d01 file

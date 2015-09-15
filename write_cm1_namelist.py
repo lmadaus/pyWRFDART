@@ -4,6 +4,8 @@ from __future__ import print_function, division
 import os, sys, getopt
 from datetime import datetime, timedelta
 from numpy import arange
+from collections import OrderedDict
+from netCDF4 import Dataset
 sys.path.append('/glade/p/work/lmadaus/cm1/pyCM1DART')
 from ens_dart_param import *
 
@@ -20,7 +22,8 @@ rstnum = 1
 for o,a in opts:
     if o == '-l':
         # Overwrite fct_len from ens_dart_param
-        fct_len = int(a)
+        fct_len = int(a)*60
+        #exp_length = int(a)*60
     elif o == '-r':
         # Change the restart number to match this file name
         irst = 1
@@ -30,11 +33,22 @@ for o,a in opts:
         else:
             # Just read as an integer
             rstnum = int(a)
+# Figure out what to put the restart time as
+if irst == 1:
+    try:
+        rstfile = Dataset('cm1out_rst_{:06d}.nc'.format(rstnum),'r')
+        rsttime = rstfile.variables['time'][0]
+        # New timax is added to this
+        #exp_length = rsttime + fct_len
+    except:
+        print("Unable to access file cm1out_rst_{:06d}.nc to find restart time!".format(rstnum))
+        pass
+
 
      
 
 def set_namelist_defaults():
-    namelist = {}
+    namelist = OrderedDict()
 
     namelist['param0'] = {
         'nx'           :  104,
@@ -55,11 +69,11 @@ def set_namelist_defaults():
         'dy'       : grid_resolutions,
         'dz'       : 290.0,
         'dtl'      : dt,
-        'timax'    : exp_length,
-        'run_time' : -999.9,
-        'tapfrq'   : out_int*60,
-        'rstfrq'   : fct_len*60,
-        'statfrq'  : 60.,
+        'timax'    : float(exp_length)*60,
+        'run_time' : float(fct_len),
+        'tapfrq'   : 300.0,
+        'rstfrq'   : float(fct_len),
+        'statfrq'  : 60.*15,
         'prclfrq'  : 60.,
     }
 
@@ -73,9 +87,9 @@ def set_namelist_defaults():
      'hadvordrv' :  5,
      'vadvordrv' :  5,
      'pdscheme'  :  1,
+     'apmasscon' :  1,
      'advwenos'  :  2,
      'advwenov'  :  0,
-     'apmasscon' :  1,
      'idiff'     :  0,
      'mdiff'     :  0,
      'difforder' :  6,
@@ -382,22 +396,29 @@ def write_namelist(nmld, outfname='namelist.input'):
     """ Formats a namelist from a dictionary and writes it to file given by
     outfname
     """
-    # Open the output file for writing
+    # Open th output file for writing
     # Set the newline character and a default indentation
     nl = '\n'
-    indent = '   '
-
+    indent = ' '
     with open(outfname, 'wb') as outfile:
+        print('', file=outfile)
         # Loop through all the sections of the namelist
-        for section_name, section in nmld.items():
+        #section_names = nmld.keys()
+        #section_names.sort()
+        #section_names.reverse()
+        for section_name, section in nmld.items():#section_names:
+            #section = nmld[section_name]
             # Write the header
-            outfile.write(''.join(('&',section_name,nl)))
+            #outfile.write(''.join((' &',section_name,nl)))
+            print(''.join((' &',section_name)), file=outfile)
             # Now loop through all variables and write
             for varname, value in section.items():
-                outfile.write(''.join((indent,varname.ljust(24), '= ', var_format(value), ',', nl)))
+                print(''.join((indent,varname.ljust(15), '= ',
+                               var_format(value), ',')), file=outfile)
             # Close the section
-            outfile.write(''.join(('/',nl)))
-            outfile.write(nl)
+            print(' /', file=outfile)
+            print('', file=outfile)
+        outfile.close()
 
 
 
