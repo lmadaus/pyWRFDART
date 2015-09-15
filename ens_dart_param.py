@@ -21,7 +21,7 @@ flag_compute_tendency = False      # True to compute the altimeter tendencies fo
 flag_make_interpol    = False      # True to perform the interpolation
 flag_keep_raw         = True       # True to keep original wrf files
 flag_compress_diag    = False       # True to gzip the diag files in longsave
-flag_keep_outs        = False      # True to preserve output files in each member's directory
+flag_keep_outs        = True      # True to preserve output files in each member's directory
 flag_precip_diag      = False      # True to extract precip diag files (NOT ENABLED)
 flag_keep_diags       = False       # True to keep the Prior and Posterior Diag files
 
@@ -64,25 +64,27 @@ dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are
 #  number of processors come from here
 #**************************************************************  
 
-cluster_name        = 'enkf'                   # name of cluster nodes
-mpi_run_command     = '/usr/rels/openmpi/bin/mpirun' # Command to run MPI
-queue_members       = 'reg'                    # Queue to run members in
-queue_filter        = 'reg'                    # Queue to run filter in          
+cluster_name        = 'yellowstone'                   # name of cluster nodes
+mpi_run_command     = 'mpirun.lsf' # Command to run MPI
+queue_members       = 'economy'                    # Queue to run members in
+queue_filter        = 'economy'                    # Queue to run filter in          
 mpi_numprocs_member = 16                       # Number of processors for member
 mpi_numprocs_filter = 128                       # Number of processors for filter
-mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
+mpi_numprocs_flag   = ''
+#mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
                                                           # for member.  Bluefire does
                                                           # blank for bluefire
 
 # Extra parameters for running on Bluefire
-NCAR_GAU_ACCOUNT     = '0'                   # Account to charge to at NCAR
+NCAR_GAU_ACCOUNT     = 'UWAS0031'                   # Account to charge to at NCAR
 ADVANCE_TIME_FILTER  = '0:45'                # Estimate of time for filter to run
 ADVANCE_TIME_MEMBER  = '0:20'                # Estimate of time for a single member to run 
 ADVANCE_QUEUE_FILTER = queue_filter          # Name of NCAR queue to use for filter 
 ADVANCE_QUEUE_MEMBER = queue_members         # Name of NCAR queue to use for members
 ADVANCE_CORES_FILTER = mpi_numprocs_filter  # Number of cores to use (multiples of 32)
 ADVANCE_CORES_MEMBER = mpi_numprocs_member  # Number of cores to use (multiples of 32)
-NCAR_ADVANCE_PTILE   = '32'                  # How many processes per core on Bluefire
+NCAR_ADVANCE_PTILE_FILTER   = '16'                  # How many processes per core on Bluefire
+NCAR_ADVANCE_PTILE_MEMBER   = '16'                  # How many processes per core on Bluefire
 
 
 
@@ -93,8 +95,8 @@ NCAR_ADVANCE_PTILE   = '32'                  # How many processes per core on Bl
 #
 dt                 = 5.           # model time step (in sec)
 grid_resolutions   = 1000.
-out_int            = 5            # Interval to write out files (in MINUTES)
-fct_len            = 60           # Interval to write restart files (in MINUTES)
+out_int            = 20            # Interval to write out files (in MINUTES)
+fct_len            = 60.           # Interval to write restart files (in MINUTES)
                                   # This is also the cycling frequency
 
 exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
