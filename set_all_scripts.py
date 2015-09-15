@@ -8,12 +8,12 @@
 # script must be run from the main dir_wrf_dom directory
 
 import os
-from WRF_dart_param import dir_longsave, dir_obs, dir_assim
+from ens_dart_param import dir_longsave, dir_obs, dir_assim
 
 
-req_files = ['run_member.py','submit_all.py','autorun_ensemble.py','write_namelists.py',\
+req_files = ['run_member.py','submit_all.py','autorun_ensemble.py','write_cm1_namelist.py',\
              'make_namelist_dart.py','submit_filter.py','make_ensemble.py',\
-             'WRF_dart_param.py','WRF_dart_obtypes.py']
+             'ens_dart_param.py','ens_dart_obtypes.py']
 
 def main():
     check_files()
