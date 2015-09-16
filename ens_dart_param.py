@@ -19,10 +19,10 @@ exp_name='pyCM1DART'                # Name of the experiment
 
 flag_compute_tendency = False      # True to compute the altimeter tendencies for each out file
 flag_make_interpol    = False      # True to perform the interpolation
-flag_keep_raw         = True       # True to keep original wrf files
+flag_keep_raw         = True       # True to keep original files
 flag_compress_diag    = False       # True to gzip the diag files in longsave
 flag_keep_outs        = True      # True to preserve output files in each member's directory
-flag_precip_diag      = False      # True to extract precip diag files (NOT ENABLED)
+flag_precip_diag      = False      # True te extract precip diag files (NOT ENABLED)
 flag_keep_diags       = False       # True to keep the Prior and Posterior Diag files
 
 flag_obs_diag         = False      # perform observation diagnostics
@@ -96,7 +96,7 @@ NCAR_ADVANCE_PTILE_MEMBER   = '16'                  # How many processes per cor
 dt                 = 5.           # model time step (in sec)
 grid_resolutions   = 1000.
 out_int            = 20            # Interval to write out files (in MINUTES)
-fct_len            = 60.           # Interval to write restart files (in MINUTES)
+cycle_len            = 60.           # Interval to write restart files (in MINUTES)
                                   # This is also the cycling frequency
 
 exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
@@ -304,7 +304,7 @@ ens_bc_pscale='0.65'         # perturbation scale for WRF-VAR 48 hr forecast
 
 # A few additional calcualtions
 # Calculate the number of integration time steps
-time_step=str((float(fct_len)*60)/float(dt))
-assim_len=str(float(N_assim)*float(fct_len))
-fct_len_hrs=str(float(fct_len)/60)
+time_step=str((float(cycle_len)*60)/float(dt))
+assim_len=str(float(N_assim)*float(cycle_len))
+cycle_len_hrs=str(float(cycle_len)/60)
 
