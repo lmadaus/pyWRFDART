@@ -93,12 +93,12 @@ NCAR_ADVANCE_PTILE_MEMBER   = '16'                  # How many processes per cor
 #   This set of parameters deals with parameters related to the 
 #   ensemble itself
 #
-dt                 = 5.           # model time step (in sec)
+dt                 = 5.          # model time step (in sec)
 grid_resolutions   = 1000.
-out_int            = 20            # Interval to write out files (in MINUTES)
-cycle_len          = 60.           # Interval to write restart files (in MINUTES)
-                                     # This is also the cycling frequency
-fcst_len           = -1          # If 0 --> no forecasts will be produced beyone the cycling interval
+out_int            = 20          # Interval to write out files (in MINUTES)
+cycle_len          = 60.         # Interval to write restart files (in MINUTES)
+                                 # This is also the cycling frequency
+fcst_len           = 6*60        # If 0 --> no forecasts will be produced beyone the cycling interval
                                  # If <0 --> At each cycle, after dropping a restart file at cycle_len
                                  #           minutes, the forecast will continue until reaching the
                                  #           equivalent of exp_len minutes

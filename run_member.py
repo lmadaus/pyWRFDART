@@ -52,8 +52,14 @@ def main():
     print "START TIME:", start
     print "END TIME:", end
     # Compute cycle_len
+    # Get any additional forecast length
+    fcst_end = end
+    if fcst_len < 0:
+        fcst_end = exp_length
+    else:
+        fcst_end += fcst_len
     cycle_len = int(end - start)
-
+    fcst_len = int(fcst_end - end)
 
     # Check here if the flag_direct_netcdf_io is True.  If so, set the
     # DART_TO_WRF and WRF_TO_DART sequences to False
@@ -75,18 +81,21 @@ def main():
         if start in assim_times:
             # Prepare cm1 to start from a restart
             restart_name = 'cm1out_rst_000001.nc'
-            cm1_prep(memnum,start,end,restart_name)
+            cm1_prep(memnum,start,fcst_end,restart_name)
         else:
-            cm1_prep(memnum,start,end)
+            cm1_prep(memnum,start,fcst_end)
         run_cm1(memnum)
 
     # Do post-MODEL cleanup
     if POST_MODEL:
         print "Doing post-MODEL cleanup"
         if end in assim_times:
-            post_model_cleanup(memnum,start,end,restart_name='cm1out_rst_000002.nc')
+            if start == 0:
+                post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000001.nc')
+            else:
+                post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000002.nc')
         else:
-            post_model_cleanup(memnum,start,end)
+            post_model_cleanup(memnum, start, end, fcst_end)
 
     # If we end at an assimilation time, run cm1_to_dart
     if MODEL_TO_DART:
@@ -280,7 +289,7 @@ def run_cm1(mem):
 
 
 
-def post_model_cleanup(mem,start,end,restart_name=None):
+def post_model_cleanup(mem,start,end,fcst_end,restart_name=None):
     """ Function to move output files to appropriate places, handle
     calculating tendency if desired and process auxilliary outputs """
     print "Beginning post-model cleanup"
@@ -289,8 +298,12 @@ def post_model_cleanup(mem,start,end,restart_name=None):
     if restart_name is not None:
         if not os.path.exists(restart_name):
             error_handler('Restart file {:s} not found for member {:d}'.format(restart_name, mem),'post_model_cleanup')
+    # Also check for out file
+    if not os.path.exists('cm1out.nc'):
+        error_handler('Output file cm1out.nc not found for member {:d}'.format(mem), 'post_model_cleanup')
 
-    print "CM1 restart file found at endtime.  Success!"    
+
+    print "CM1 restart file found.  Success!"    
     # Check the rsl.error files to be doubly sure
     # INSERT CODE HERE
 
@@ -327,12 +340,20 @@ def post_model_cleanup(mem,start,end,restart_name=None):
     # NEED TO FIGURE OUT HERE WHAT TO RENAME THE FILE
     os.system('cp {:s} cm1out_rst_000001.nc'.format(restart_name))
 
+    # Now remove all other restart files
+    rst_file = [f for f in os.listdir('.') if 'cm1out_rst' in f and not f.endswith('000001.nc')]
+    for f in rst_file:
+        os.system('rm -f {:s}'.format(f))
 
 
     # Check to see if we keep the regular out files
     if not flag_keep_outs:
         print "Removing old out files."
         os.system('rm -f cm1out.nc')
+
+    # Archive the forecast if fcst_len != 0
+    if fcst_len:
+        os.system('mv cm1out.nc cm1out_m{:d}_{:06d}.nc'.format(mem,start))
 
 
 

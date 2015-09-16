@@ -16,13 +16,18 @@ add_nml_line = False
 irst = 0
 rstnum = 1
 
+# Set up default total_len
+if fcst_len < 0:
+    total_len = exp_length
+else:
+    total_len = cycle_len + fcst_len
 
 # Read in command line parameters
 (opts,args) = getopt.getopt(sys.argv[1:],'r:l:')
 for o,a in opts:
     if o == '-l':
-        # Overwrite fct_len from ens_dart_param
-        fct_len = int(a)*60
+        # Overwrite total_len from ens_dart_param
+        total_len = int(a)*60
         #exp_length = int(a)*60
     elif o == '-r':
         # Change the restart number to match this file name
@@ -39,7 +44,7 @@ if irst == 1:
         rstfile = Dataset('cm1out_rst_{:06d}.nc'.format(rstnum),'r')
         rsttime = rstfile.variables['time'][0]
         # New timax is added to this
-        #exp_length = rsttime + fct_len
+        #exp_length = rsttime + cycle_len
     except:
         print("Unable to access file cm1out_rst_{:06d}.nc to find restart time!".format(rstnum))
         pass
@@ -70,9 +75,9 @@ def set_namelist_defaults():
         'dz'       : 290.0,
         'dtl'      : dt,
         'timax'    : float(exp_length)*60,
-        'run_time' : float(fct_len),
+        'run_time' : float(total_len),
         'tapfrq'   : 300.0,
-        'rstfrq'   : float(fct_len),
+        'rstfrq'   : float(cycle_len),
         'statfrq'  : 60.*15,
         'prclfrq'  : 60.,
     }
