@@ -51,8 +51,8 @@ def main():
     memnum, start, end = get_basic_info() 
     print "START TIME:", start
     print "END TIME:", end
-    # Compute fct_len
-    fct_len = int(end - start)
+    # Compute cycle_len
+    cycle_len = int(end - start)
 
 
     # Check here if the flag_direct_netcdf_io is True.  If so, set the
@@ -116,7 +116,7 @@ def get_assim_times():
 
         REQUIRES:
             In ens_dart_param:
-                exp_length, fct_len, N_assim, assim_start, assim_interval
+                exp_length, cycle_len, N_assim, assim_start, assim_interval
 
         RETURNS:
                 list of assimilation times"""
@@ -129,7 +129,7 @@ def get_assim_times():
 
     # Make a list of all cycles
     # This list is in minutes since simulation start
-    cycle_times = range(0, int(exp_length)+int(fct_len), int(fct_len))
+    cycle_times = range(0, int(exp_length)+int(cycle_len), int(cycle_len))
 
     # Now whittle this down based on the above
     # Start where requested

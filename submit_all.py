@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys
-from ens_dart_param import Ne,fct_len,dir_members,dir_utils,dir_longsave,queue_members,mpi_numprocs_member
+from ens_dart_param import Ne,cycle_len,dir_members,dir_utils,dir_longsave,queue_members,mpi_numprocs_member
 from datetime import datetime, timedelta
 from argparse import ArgumentParser
 
@@ -9,8 +9,8 @@ parser = ArgumentParser()
 
 parser.add_argument('-d','--d',dest='starttime',type=int,default=0,
                   help='Start time of this cycle')
-parser.add_argument('-l','--length',action='store',dest='length',type=int,default=int(fct_len),
-                  help='Override fct_len: length of cycle in minutes')
+parser.add_argument('-l','--length',action='store',dest='length',type=int,default=int(cycle_len),
+                  help='Override cycle_len: length of cycle in minutes')
 parser.add_argument('-m','--mems',nargs='+',action='store',dest='sub_mems',default=[],
                   help='Only submit lited members')
 

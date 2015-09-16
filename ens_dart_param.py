@@ -96,8 +96,14 @@ NCAR_ADVANCE_PTILE_MEMBER   = '16'                  # How many processes per cor
 dt                 = 5.           # model time step (in sec)
 grid_resolutions   = 1000.
 out_int            = 20            # Interval to write out files (in MINUTES)
-cycle_len            = 60.           # Interval to write restart files (in MINUTES)
-                                  # This is also the cycling frequency
+cycle_len          = 60.           # Interval to write restart files (in MINUTES)
+                                     # This is also the cycling frequency
+fcst_len           = -1          # If 0 --> no forecasts will be produced beyone the cycling interval
+                                 # If <0 --> At each cycle, after dropping a restart file at cycle_len
+                                 #           minutes, the forecast will continue until reaching the
+                                 #           equivalent of exp_len minutes
+                                 # Else --> As above, but each forecast will be for an additional
+                                 # fcst_len minutes beyond cycle_len
 
 exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
 Ne                = 10           # Number of ensemble members

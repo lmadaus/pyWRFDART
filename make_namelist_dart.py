@@ -46,8 +46,8 @@ first_ob = start_window - epoch
 last_ob = end_window - epoch
 
 # Forecast lengths
-fct_len_days = str(int(float(fct_len_hrs) / 24))
-fct_len_seconds = str(int(float(fct_len_hrs) % 24) * 3600)
+cycle_len_days = str(int(float(cycle_len_hrs) / 24))
+cycle_len_seconds = str(int(float(cycle_len_hrs) % 24) * 3600)
 bin_int_seconds = int(window_minutes)*120
 
 # Just let us know where we are
@@ -239,7 +239,7 @@ def set_namelist_sectors():
         'num_domains'                 : '{:d}'.format(max_dom),
         'calendar_type'               : '3',
         'sfc_elev_max_diff'           : '{:f}'.format(sfc_elev_tol),
-        'assimilation_period_seconds' : '{:d}'.format(fct_len*60),
+        'assimilation_period_seconds' : '{:d}'.format(cycle_len*60),
         'allow_obs_below_vol'         : '.false.',
         'vert_localization_coord'     : '{:d}'.format(vert_loc_coord),
         'center_search_half_length'   : '200000.',
@@ -316,8 +316,8 @@ def set_namelist_sectors():
         'obs_sequence_name'     : '"obs_seq.diag"',
         'first_bin_center'      : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
         'last_bin_center'       : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'bin_separation'        : '0,  0,  0,  {:s},  0,  0'.format(fct_len_hrs),
-        'bin_width'             : '0,  0,  0,  {:s},  0,  0'.format(fct_len_hrs),
+        'bin_separation'        : '0,  0,  0,  {:s},  0,  0'.format(cycle_len_hrs),
+        'bin_width'             : '0,  0,  0,  {:s},  0,  0'.format(cycle_len_hrs),
         'time_to_skip'          : '0,  0,  0,  0,  0,  0',
         'max_num_bins'          : '10000',
         'Nregions'              : '1',
@@ -497,8 +497,8 @@ def set_namelist_sectors():
         'calendar'                : '"gregorian"',
         'first_analysis'          : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
         'last_analysis'           : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'forecast_length_days'    :'{:s}'.format(fct_len_days),
-        'forecast_length_seconds' :  '{:s}'.format(fct_len_seconds),
+        'forecast_length_days'    :'{:s}'.format(cycle_len_days),
+        'forecast_length_seconds' :  '{:s}'.format(cycle_len_seconds),
         'verification_interval_seconds' : '10800',
         'temporal_coverage_percent' : '100.0',
         'lonlim1'                 : '0.0',
