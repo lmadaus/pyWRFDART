@@ -37,7 +37,10 @@ def main():
     #print timelist
 
     # Find out which are assimilation times
-    assim_times = all_timelist[assim_start:N_assim+1:assim_interval]
+    if assim_start < 0:
+        assim_times = []
+    else:
+        assim_times = all_timelist[assim_start:N_assim+1:assim_interval]
 
     #print "Assim times correct?", assim_times
     #raw_input()

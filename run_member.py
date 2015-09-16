@@ -142,7 +142,10 @@ def get_assim_times():
 
     # Now whittle this down based on the above
     # Start where requested
-    cycle_times = cycle_times[assim_start:N_assim:assim_interval]
+    if assim_start < 0:
+        cycle_times = []
+    else:
+        cycle_times = cycle_times[assim_start:N_assim:assim_interval]
 
 
     # Return the list of assimilation times
