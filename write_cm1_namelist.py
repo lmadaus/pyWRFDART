@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from numpy import arange
 from collections import OrderedDict
 from netCDF4 import Dataset
-sys.path.append('/glade/p/work/lmadaus/cm1/pyCM1DART')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
 from ens_dart_param import *
 
 # Set some defaults
@@ -15,6 +15,7 @@ seed_num = 100000
 add_nml_line = False
 irst = 0
 rstnum = 1
+memnum = 1
 
 # Set up default total_len
 if fcst_len < 0:
@@ -23,7 +24,7 @@ else:
     total_len = cycle_len + fcst_len
 
 # Read in command line parameters
-(opts,args) = getopt.getopt(sys.argv[1:],'r:l:')
+(opts,args) = getopt.getopt(sys.argv[1:],'r:l:m:')
 for o,a in opts:
     if o == '-l':
         # Overwrite total_len from ens_dart_param
@@ -38,6 +39,8 @@ for o,a in opts:
         else:
             # Just read as an integer
             rstnum = int(a)
+    elif o == '-m':
+        memnum = int(a)
 # Figure out what to put the restart time as
 if irst == 1:
     try:
@@ -77,7 +80,7 @@ def set_namelist_defaults():
         'timax'    : float(exp_length)*60,
         'run_time' : float(total_len),
         'tapfrq'   : 300.0,
-        'rstfrq'   : float(cycle_len),
+        'rstfrq'   : float(cycle_len)*60,
         'statfrq'  : 60.*15,
         'prclfrq'  : 60.,
     }
@@ -160,11 +163,11 @@ def set_namelist_defaults():
     namelist['param11'] = {
      'radopt'  :        1,
      'dtrad'   :    300.0,
-     'ctrlat'  :    33.1789,
-     'ctrlon'  :   -86.7822,
+     'ctrlat'  :    41.6139,
+     'ctrlon'  :   -90.5914,
      'year'    :     2014,
-     'month'   :       8,
-     'day'     :       8,
+     'month'   :       6,
+     'day'     :       1,
      'hour'    :       12,
      'minute'  :       00,
      'second'  :       00,
@@ -176,10 +179,10 @@ def set_namelist_defaults():
      'oceanmodel' :      1,
      'ipbl'       :      1,
      'initsfc'    :      1,
-     'tsk0'       :  296.2,
-     'tmn0'       :  296.2,
+     'tsk0'       :  295.3,
+     'tmn0'       :  295.3,
      'xland0'     :    1.0,
-     'lu0'        :     14,
+     'lu0'        :      2,
      'season'     :      1,
      'cecd'       :      3,
      'pertflx'    :      0,

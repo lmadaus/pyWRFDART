@@ -4,7 +4,7 @@ import os, sys
 from datetime import datetime, timedelta
 import re
 from netCDF4 import Dataset
-sys.path.append('/glade/p/work/lmadaus/cm1/pyCM1DART')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
 from ens_dart_param import *
 
 
@@ -59,7 +59,7 @@ def main():
     else:
         fcst_end += fcst_len
     cycle_len = int(end - start)
-    fcst_len = int(fcst_end - end)
+    #forecast_len = int(fcst_end - end)
 
     # Check here if the flag_direct_netcdf_io is True.  If so, set the
     # DART_TO_WRF and WRF_TO_DART sequences to False
@@ -339,9 +339,10 @@ def post_model_cleanup(mem,start,end,fcst_end,restart_name=None):
     # Actual file turnaround goes here
     print "Copying over files for restart."
     # Save the previous file in case something goes wrong
-    os.system('mv cm1out_rst_000001.nc prev_cm1out_rst_000001.nc')
-    # NEED TO FIGURE OUT HERE WHAT TO RENAME THE FILE
-    os.system('cp {:s} cm1out_rst_000001.nc'.format(restart_name))
+    if start != 0:
+        os.system('mv cm1out_rst_000001.nc prev_cm1out_rst_000001.nc')
+        # THIS IS WHERE THE ACTUAL SWITCHOVER GOES
+        os.system('cp {:s} cm1out_rst_000001.nc'.format(restart_name))
 
     # Now remove all other restart files
     rst_file = [f for f in os.listdir('.') if 'cm1out_rst' in f and not f.endswith('000001.nc')]
