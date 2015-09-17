@@ -89,13 +89,13 @@ def main():
     # Do post-MODEL cleanup
     if POST_MODEL:
         print "Doing post-MODEL cleanup"
-        if end in assim_times:
-            if start == 0:
-                post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000001.nc')
-            else:
-                post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000002.nc')
+        #if end in assim_times:
+        if start == 0:
+            post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000001.nc')
         else:
-            post_model_cleanup(memnum, start, end, fcst_end)
+            post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000002.nc')
+        #else:
+        #    post_model_cleanup(memnum, start, end, fcst_end)
 
     # If we end at an assimilation time, run cm1_to_dart
     if MODEL_TO_DART:
@@ -342,6 +342,7 @@ def post_model_cleanup(mem,start,end,fcst_end,restart_name=None):
     if start != 0:
         os.system('mv cm1out_rst_000001.nc prev_cm1out_rst_000001.nc')
         # THIS IS WHERE THE ACTUAL SWITCHOVER GOES
+        print("Copying over restart:", restart_name)
         os.system('cp {:s} cm1out_rst_000001.nc'.format(restart_name))
 
     # Now remove all other restart files
