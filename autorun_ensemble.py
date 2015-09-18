@@ -47,8 +47,8 @@ def main():
     #print "Run_datelist", run_datelist
 
     # Turn on the control lock
-    if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom):                           
-        os.system('touch %s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom)                                            
+    if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_dom):                           
+        os.system('touch %s/AUTO_RUN_IN_PROGRESS' % dir_dom)                                            
     else:                                                                                     
         print "Found file 'AUTO_RUN_IN_PROGRESS' in main dir."                                
         print "Don't want to start a duplicate auto run."                                     
@@ -60,7 +60,7 @@ def main():
         os.system('./check_ensemble_status.py -d {:d} -s'.format(time))
         # Master control lock -- check to see if this file exists                              
         # If it doesn't exist, exit the program                                                
-        if not os.path.exists('{:s}/AUTO_RUN_IN_PROGRESS'.format(dir_wrf_dom)):                        
+        if not os.path.exists('{:s}/AUTO_RUN_IN_PROGRESS'.format(dir_dom)):                        
             print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting.")      
             exit(0)         
         if time in assim_times:

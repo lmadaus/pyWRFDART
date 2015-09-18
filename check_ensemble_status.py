@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Script that checks the status of the entire model run
-
+from __future__ import print_function, division
 import os, sys, datetime, getopt, re
 from netCDF4 import Dataset
 from ens_dart_param import *
@@ -105,7 +105,7 @@ def chkstat(chkdate):
                 error_found = check_logfile(mem)
                 if not error_found:
                     # Not sure why this member is missing, but add it to error anyway
-                    print "Member {:d} Model crashed.  Unknown reason.".format(mem)
+                    print("Member {:d} Model crashed.  Unknown reason.".format(mem))
                     memserror.append(mem)
 
             # If we're here, then restart file exists. Now the true test...is it at the
@@ -120,14 +120,14 @@ def chkstat(chkdate):
                     error_found = check_logfile(mem)
                     if not error_found:
                         # Not sure why this member is missing, but add it to error anyway
-                        print "Member {:d} Model crashed.  Unknown reason.".format(mem)
+                        print("Member {:d} Model crashed.  Unknown reason.".format(mem))
                         memserror.append(mem)
 
             # Final check if we're not doing the netcdf IO
-            if not os.path.exists('{:s}/wrfdart/filter_ic_old.{:04d}'.format(dir_dom,mem))\
+            if not os.path.exists('{:s}/assimilation/filter_ic_old.{:04d}'.format(dir_dom,mem))\
                 and (mem not in memserror) and not flag_direct_netcdf_io:
                 # Something went wrong on WTD.  Only can proceed if this file exists
-                print "Member {:d} Error in POST-WRF or WRF-TO-DART".format(mem)
+                print("Member {:d} Error in POST-MODEL or MODEL-TO-DART".format(mem))
                 memserror.append(mem)
             # If we're here, the member is no longer in the queue, and restart
             # (and filter_ic_old) files exists for the correct time.  This member is done. 
@@ -154,24 +154,24 @@ def check_logfile(memnum):
         # and what they mean.  If an error message
         # is found, add the model to the errored members list
         if re.search('used in new version', line) or re.search('cfl', line):
-            print "Member %d Dom %d : Probable CFL Error" % (ie,dom)
-            print "     %s" % line
+            print("Member {:d}: Probable CFL Error".format(ie))
+            print("     ", line)
             error = 1
         if re.search('forrtl: error', line):
-            print "Member %d Dom %d: Model crashed, unknown reason." % (ie, dom)
-            print "     %s" % line
+            print "Member {:d}: Model crashed, unknown reason.".format(ie))
+            print("     ", line)
             error = 1
         if re.search('recursive I/O operation', line):
-            print "Member %d Dom %d: WRF I/O crashed, unknown reason." % (ie,dom)
-            print "     %s" % line  
+            print("Member {:d}: WRF I/O crashed, unknown reason.".format(ie))
+            print("     ",line) 
             error = 1
         if re.search('Segmentation Fault', line) or re.search('segmentation fault', line):
-            print "Member %d Dom %d: Memory error (seg fault)" % (ie,dom)
-            print "     %s" % line
+            print("Member {:d}: Memory error (seg fault)".format(ie))
+            print("     ", line)
             error = 1
         if re.search('WOULD GO OFF TOP', line):
-            print "Member %d Dom %d: CFL error with convective scheme" % (ie,dom)
-            print "     %s" % line
+                  print("Member {:d}: CFL error with convective scheme".format(ie))
+            print("     ", line)
             error = 1
     return error
 
@@ -190,12 +190,12 @@ def check_complete_cm1(indate):
         nonan = False     
     except:
         # May not have this library on some machines
-        print "netCDF4 library not found. skipping Nancheck"
+        print("netCDF4 library not found. skipping Nancheck")
         nonan = True
     try:
         import numpy as np
     except:
-        print "Numpy not found.  Skipping."
+        print("Numpy not found.  Skipping.")
 
 
     # Loop through each ensemble member and see if the T2 field
@@ -212,12 +212,12 @@ def check_complete_cm1(indate):
                # Open the dataset if it exists
                ncfile = Dataset('{:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem))
            except:
-               print "rst file at time {:d} sec. doesn't seem to exist for member {:d}!" % (indate, mem)
+               print("rst file at time {:d} min. doesn't seem to exist for member {:d}!".format(indate, mem))
                exit(1)
            T2 = ncfile.variables['t2'][:,:]
            # Search for nan-ed members
            if True in np.isnan(T2):
-               print "Found NAN in member {:d}".format(mem)
+               print("Found NAN in member {:d}".format(mem))
                nan_members.append(mem)
     return nan_members
 
@@ -227,7 +227,7 @@ def check_complete_cm1(indate):
 def resubmit(merror):
    # Quick function to resubmit all crashed members
    for mem in merror:
-      print "   Resubmitting member {:d}".format(mem)
+      print("   Resubmitting member {:d}".format(mem))
       os.chdir('{:s}/m{:d}'.format(dir_members,mem))
       os.system('rm -rf rsl.*')
       # May need to reset environment variables here
@@ -258,7 +258,7 @@ if silent:
         # Master control lock -- check to see if this file exists                              
         # If it doesn't exist, exit the program                                                
         if not os.path.exists('{:s}/AUTO_RUN_IN_PROGRESS'.format(dir_dom)):                        
-            print "File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting."          
+            print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir. Exiting.")         
             exit(0) 
 
         # Check the status for the date specified
@@ -299,7 +299,7 @@ if silent:
         logfile.write("")
         logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
         logfile.write("******* ALL FILES PRESENT *******")
-        print "******* ALL FILES PRESENT *******"
+        print("******* ALL FILES PRESENT *******")
         # Now check for any NANed members
         # Using the check_complete_cm1 function
         nanmems = check_complete_cm1(indate) 
@@ -340,19 +340,19 @@ else:
     # Status of the ensemble 
     mdone, mnotdone, mnotstart, merror = chkstat(indate)
     nowtm = datetime.datetime.now()
-    print ""
-    print "***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)
-    print "-----------------------------------------"
-    print "   {:02d} Members done: ".format(len(mdone)), mdone
-    print "   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone
-    print "   {:02d} Members not started: ".format(len(mnotstart)), mnotstart
-    print "   {:02d} Members crashed: ".format(len(merror)), merror
-    print ""
+    print("")
+    print("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm))
+    print("-----------------------------------------"
+    print("   {:02d} Members done: ".format(len(mdone)), mdone)
+    print("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
+    print("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
+    print("   {:02d} Members crashed: ".format(len(merror)), merror)
+    print("")
 
     if len(mdone) >= int(Ne):
         # If all members happen to be done, check for NAN-ed members
-        print "******* ALL FILES PRESENT *******"
-        print ""
+        print("******* ALL FILES PRESENT *******")
+        print("")
         # Now check for any NANed members
         nanmems = check_complete_cm1(indate) 
         print nanmems
