@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from numpy import arange
 from collections import OrderedDict
 from netCDF4 import Dataset
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdnr_ensemble')
 from ens_dart_param import *
 
 # Set some defaults

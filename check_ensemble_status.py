@@ -278,10 +278,10 @@ if silent:
             logfile.write("")
             logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
             logfile.write("-----------------------------------------")
-            logfile.write("   {:02d} Members done: ".format(len(mdone), mdone))
-            logfile.write("   {:02d} Members in progress: ".format(len(mnotdone), mnotdone))
-            logfile.write("   {:02d} Members not started: ".format(len(mnotstart), mnotstart))
-            logfile.write("   {:02d} Members crashed: ".format(len(merror), merror))
+            logfile.write("   {:02d} Members done: ".format(len(mdone)), mdone)
+            logfile.write("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
+            logfile.write("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
+            logfile.write("   {:02d} Members crashed: ".format(len(merror)), merror)
             logfile.write("")
             timecheck = 0
 
@@ -343,10 +343,10 @@ else:
     print ""
     print "***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)
     print "-----------------------------------------"
-    print "   {:02d} Members done: ".format(len(mdone), mdone)
-    print "   {:02d} Members in progress: ".format(len(mnotdone), mnotdone)
-    print "   {:02d} Members not started: ".format(len(mnotstart), mnotstart)
-    print "   {:02d} Members crashed: ".format(len(merror), merror)
+    print "   {:02d} Members done: ".format(len(mdone)), mdone
+    print "   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone
+    print "   {:02d} Members not started: ".format(len(mnotstart)), mnotstart
+    print "   {:02d} Members crashed: ".format(len(merror)), merror
     print ""
 
     if len(mdone) >= int(Ne):
