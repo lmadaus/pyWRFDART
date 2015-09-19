@@ -158,7 +158,7 @@ def check_logfile(memnum):
             print("     ", line)
             error = 1
         if re.search('forrtl: error', line):
-            print "Member {:d}: Model crashed, unknown reason.".format(ie))
+            print("Member {:d}: Model crashed, unknown reason.".format(ie))
             print("     ", line)
             error = 1
         if re.search('recursive I/O operation', line):
@@ -170,7 +170,7 @@ def check_logfile(memnum):
             print("     ", line)
             error = 1
         if re.search('WOULD GO OFF TOP', line):
-                  print("Member {:d}: CFL error with convective scheme".format(ie))
+            print("Member {:d}: CFL error with convective scheme".format(ie))
             print("     ", line)
             error = 1
     return error
@@ -278,10 +278,10 @@ if silent:
             logfile.write("")
             logfile.write("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm)) 
             logfile.write("-----------------------------------------")
-            logfile.write("   {:02d} Members done: ".format(len(mdone)), mdone)
-            logfile.write("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
-            logfile.write("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
-            logfile.write("   {:02d} Members crashed: ".format(len(merror)), merror)
+            logfile.write("   {:02d} Members done: ".format(len(mdone)))
+            logfile.write("   {:02d} Members in progress: ".format(len(mnotdone)))
+            logfile.write("   {:02d} Members not started: ".format(len(mnotstart)))
+            logfile.write("   {:02d} Members crashed: ".format(len(merror)))
             logfile.write("")
             timecheck = 0
 
@@ -313,13 +313,13 @@ if silent:
             resubmit(nanmems)
             # Wait for the nan-ed members to finish
             # LEM (TODO) NEED CODE HERE FOR MONITORING RESTART
-            os.system('touch ensemble_done_{:d}' % indate/60)
+            os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
             logfile.close()
             exit(0)
 
         else:
             # If all is good, we are done here
-            os.system('touch ensemble_done_{:d}' % indate/60)
+            os.system('touch ensemble_done_{:d}'.format(int(indate/60)))
             logfile.close()
             exit(0)
 
@@ -342,7 +342,7 @@ else:
     nowtm = datetime.datetime.now()
     print("")
     print("***  Status as of {:%m/%d  %I:%M:%S %p}  ***".format(nowtm))
-    print("-----------------------------------------"
+    print("-----------------------------------------")
     print("   {:02d} Members done: ".format(len(mdone)), mdone)
     print("   {:02d} Members in progress: ".format(len(mnotdone)), mnotdone)
     print("   {:02d} Members not started: ".format(len(mnotstart)), mnotstart)
@@ -355,7 +355,7 @@ else:
         print("")
         # Now check for any NANed members
         nanmems = check_complete_cm1(indate) 
-        print nanmems
+        print(nanmems)
         if len(nanmems) > 0:
             resub = raw_input("Resubmit NAN members (0 or 1)?  ")
             if int(resub) == 1:

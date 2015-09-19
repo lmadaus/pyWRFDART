@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function, division
 import os, sys, getopt
 from ens_dart_param import *
 from datetime import datetime,timedelta
@@ -42,7 +42,7 @@ def main():
     else:
         assim_times = all_timelist[assim_start:N_assim+1:assim_interval]
 
-    #print "Assim times correct?", assim_times
+    print("Assim times correct?", assim_times)
     #raw_input()
     #print "Run_datelist", run_datelist
 
@@ -50,9 +50,9 @@ def main():
     if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_dom):                           
         os.system('touch %s/AUTO_RUN_IN_PROGRESS' % dir_dom)                                            
     else:                                                                                     
-        print "Found file 'AUTO_RUN_IN_PROGRESS' in main dir."                                
-        print "Don't want to start a duplicate auto run."                                     
-        print "Exiting."                                                                      
+        print("Found file 'AUTO_RUN_IN_PROGRESS' in main dir.")                            
+        print("Don't want to start a duplicate auto run.")                               
+        print("Exiting.")                                                                    
         exit(1)             
     for time in run_timelist:
 

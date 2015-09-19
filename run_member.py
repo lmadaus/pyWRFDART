@@ -80,8 +80,8 @@ def main():
         print "Running CM1"
         if start in assim_times:
             # Prepare cm1 to start from a restart
-            restart_name = 'cm1out_rst_000001.nc'
-            cm1_prep(memnum,start,fcst_end,restart_name)
+            #restart_name = 'cm1out_rst_000001.nc'
+            cm1_prep(memnum,start,fcst_end)
         else:
             cm1_prep(memnum,start,fcst_end)
         run_cm1(memnum)
@@ -90,10 +90,7 @@ def main():
     if POST_MODEL:
         print "Doing post-MODEL cleanup"
         #if end in assim_times:
-        if start == 0:
-            post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000001.nc')
-        else:
-            post_model_cleanup(memnum, start, end, fcst_end, restart_name='cm1out_rst_000002.nc')
+        post_model_cleanup(memnum, start, end, fcst_end)
         #else:
         #    post_model_cleanup(memnum, start, end, fcst_end)
 
@@ -237,13 +234,13 @@ def run_dart_to_cm1(mem,start):
 
 
 
-def cm1_prep(mem,start,end,restart_name=None):
+def cm1_prep(mem,start,end,restart_name='cm1out_rst_000001.nc'):
     """ Function to write new namelist.input and check to be
         sure files are in order 
 
     """
     # If this is a restart, be sure we have the right file
-    if restart_name is not None:
+    if start != 0:
         # Try loading the restart file with the correct name
         if not os.path.exists(restart_name):
             error_handler('unable to find file {:s} in member {:d} directory'.format(restart_name, mem), 'cm1_prep')
@@ -266,7 +263,7 @@ def cm1_prep(mem,start,end,restart_name=None):
     dtime = int(end-start)
 
     # Write the namelist
-    if restart_name is not None:
+    if start != 0:
         os.system('./write_cm1_namelist.py -r {:s} -l {:d}'.format(restart_name, dtime))
     else:
         os.system('./write_cm1_namelist.py -l {:d}'.format(dtime))
@@ -292,15 +289,27 @@ def run_cm1(mem):
 
 
 
-def post_model_cleanup(mem,start,end,fcst_end,restart_name=None):
+def post_model_cleanup(mem,start,end,fcst_end):
     """ Function to move output files to appropriate places, handle
     calculating tendency if desired and process auxilliary outputs """
     print "Beginning post-model cleanup"
 
     # First, verify that CM1 finished correctly
-    if restart_name is not None:
+    if start != 0:
+        # Find the second restart name
+        rst_files = [f for f in os.listdir('.') if\
+                     f.startswith('cm1out_rst') and f.endswith('.nc')]
+        rst_files.sort()
+        # It's the seocnd file
+        restart_name = rst_files[1]
         if not os.path.exists(restart_name):
             error_handler('Restart file {:s} not found for member {:d}'.format(restart_name, mem),'post_model_cleanup')
+        # Check to be sure this is at the right time
+        with Dataset(restart_name,'r') as rstfile:
+            rst_time = rstfile.variables['time'][0]
+            if rst_time != end * 60:
+                error_handler('Restart file {:s} not at correct time {:d} min. for member {:d}'.format(restart_name, int(end), mem),'post_model_cleanup')
+
     # Also check for out file
     if not os.path.exists('cm1out.nc'):
         error_handler('Output file cm1out.nc not found for member {:d}'.format(mem), 'post_model_cleanup')
