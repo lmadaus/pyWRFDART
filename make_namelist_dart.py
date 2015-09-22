@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import print_function, division
 ########################################################################
 #
 #   make_namelist_dart.scr - script that makes the DART namelist 
@@ -7,11 +8,12 @@
 #
 #   created Feb. 2009 R. Mahajan, University of Washington
 #   modified for Python June 2011 L. Madaus, University of Washington
+#   modified for CM1 Sept 2015 L. Madaus, University of Washington
 #
 ########################################################################
 
-from WRF_dart_param import *
-from WRF_dart_obtypes import *
+from ens_dart_param import *
+from ens_dart_obtypes import *
 import sys,getopt,re
 from datetime import datetime, timedelta
 from os import popen
@@ -26,28 +28,21 @@ for o,a in opts:
    if o == '-i':
       write_prior_inf = True
 
-# Get the correct time
-if re.search('^\d{12}$',timestr):
-   assim_time = datetime.strptime(timestr,'%Y%m%d%H%M')
-elif re.search('^\d{10}$', timestr):
-   assim_time = datetime.strptime(timestr,'%Y%m%d%H')
-else:
-   print("Unrecognized time string: ", timestr)
-   exit(1)
-
+assim_time_sec = int(timestr) * 60
 # Use the advance_time utility from DART to get the day and second
 # in DART format of the assimilation window
 #first_ob = os.popen('echo {:s} -{:d}m -g | {:s}/advance_time'.format(timestr,window_minutes,dir_src_dart)).read()
 #last_ob = os.popen('echo {:s} +{:d}m -g | {:s}/advance_time'.format(timestr,window_minutes,dir_src_dart)).read()
 epoch = datetime(1601,1,1,0)
+assim_time_date = epoch + timedelta(seconds=assim_time_sec) 
 start_window = assim_time - timedelta(minutes=window_minutes)
 end_window = assim_time + timedelta(minutes=window_minutes)
 first_ob = start_window - epoch
 last_ob = end_window - epoch
 
 # Forecast lengths
-cycle_len_days = str(int(float(cycle_len_hrs) / 24))
-cycle_len_seconds = str(int(float(cycle_len_hrs) % 24) * 3600)
+cycle_len_days = 0 
+cycle_len_seconds = int(cycle_len) * 60
 bin_int_seconds = int(window_minutes)*120
 
 # Just let us know where we are
