@@ -18,7 +18,7 @@ import sys,getopt,re
 from datetime import datetime, timedelta
 from os import popen
 
-timestr = date_start
+timestr = cycle_len 
 write_prior_inf = False
 (opts,args) = getopt.getopt(sys.argv[1:],'d:i')
 
@@ -35,8 +35,8 @@ assim_time_sec = int(timestr) * 60
 #last_ob = os.popen('echo {:s} +{:d}m -g | {:s}/advance_time'.format(timestr,window_minutes,dir_src_dart)).read()
 epoch = datetime(1601,1,1,0)
 assim_time_date = epoch + timedelta(seconds=assim_time_sec) 
-start_window = assim_time - timedelta(minutes=window_minutes)
-end_window = assim_time + timedelta(minutes=window_minutes)
+start_window = assim_time_date - timedelta(minutes=window_minutes)
+end_window = assim_time_date + timedelta(minutes=window_minutes)
 first_ob = start_window - epoch
 last_ob = end_window - epoch
 
@@ -84,50 +84,75 @@ def set_namelist_sectors():
 
     namelist = {}
     # Here we define each block of the input.nml file separately
-    namelist['perfect_model_obs'] = {}
+    namelist['perfect_model_obs'] = {
+        'adv_ens_command' : '../shell_scripts/advance_model.csh',
+        'async'                    : '0',
+        'first_obs_days'           : '-1',
+        'first_obs_seconds'        : '-1',
+        'init_time_days'           : '0',
+        'init_time_seconds'        : '0',
+        'last_obs_days'            : '-1',
+        'last_obs_seconds'         : '-1',
+        'obs_seq_in_file_name'     : 'obs_seq.in',
+        'obs_seq_out_file_name'    : 'obs_seq.out',
+        'output_forward_op_errors' : '.false',
+        'output_interval'          : '1',
+        'output_restart'           : '1',
+        'output_timestamps'        : '.false.',
+        'print_every_nth_obs'      : '-1',
+        'restart_in_file_name'     : 'perfect_ics',
+        'restart_out_file_name'    : 'perfect_restart',
+        'silence'                  : '.false.',
+        'start_from_restart'       : '.true.',
+        'trace_execution'          : '.false.',
+
+    }
 
     namelist['filter'] = {
         'async' : '{:d}'.format(async),
         'adv_ens_command' : '"./advance_model.csh"',
-        'ens_size' :  '{:d}'.format(Ne),
-        'start_from_restart' :  '.true.',
-        'output_restart' :  '.true.',
-        'obs_sequence_in_name' : '"obs_seq.prior"',
-        'obs_sequence_out_name': '"obs_seq.posterior"',
-        'restart_in_file_name' : '"filter_ic_old"',
-        'restart_out_file_name' : '"filter_ic_new"', 
-        'init_time_days' :  '-1',
-        'init_time_seconds' : '-1',
-        'first_obs_days' : '-1',
-        'first_obs_seconds': '-1',
-        'last_obs_days' : '-1',
-        'last_obs_seconds'         : '-1',
-        'num_output_state_members' : '{:d}'.format(Ne),
-        'num_output_obs_members'   : '{:d}'.format(Ne),
-        'output_interval'          : '1',
-        'num_groups'               : '1',
-        'input_qc_threshold'       : '{:f}'.format(input_qc_threshold),
-        'outlier_threshold'        : '{:f}'.format(outlier_threshold),
-        'output_forward_op_errors' : '.false.',
-        'output_timestamps'        : '.false.',
-        'output_inflation'         : '.true.',
-        'trace_execution'          : '.true.',
-        'silence'                  : '.false.',
-        'inf_flavor'               : '{0:d}, {1:d}'.format(infl_flavor_prior,infl_flavor_post),
-        'inf_initial_from_restart' : '{0:s}, {0:s}'.format(format_true_false(write_prior_inf)),
-        'inf_output_restart'          : '.true.,   .true.,',
-        'inf_deterministic'           : '.true.,   .true.,',
-        'inf_in_file_name'            :  '"prior_inf_ic_old", "post_inf_ic_old"',
-        'inf_out_file_name'           : '"prior_inf_ic_new", "post_inf_ic_new"',
-        'inf_diag_file_name'          : '"prior_inf_diag", "post_inf_diag"',
-        'inf_initial'                 : '{0:f}, {1:f}'.format(infl_mean_init_prior, infl_mean_init_post),
-        'inf_sd_initial'              : '{0:f}, {1:f}'.format(infl_sd_init_prior, infl_sd_init_post),
-        'inf_damping'                 : '{0:f}, {1:f}'.format(infl_damp_prior, infl_damp_post), 
-        'inf_lower_bound'             : '{0:f}, {1:f}'.format(infl_lb_prior, infl_lb_post),
-        'inf_upper_bound'             : '{0:f}, {1:f}'.format(infl_ub_prior, infl_ub_post),
-        'inf_sd_lower_bound'          : '{0:f}, {1:f}'.format(infl_sd_lb_prior, infl_sd_lb_post),
+        'diagnostic_files' : '.true.',
         'direct_netcdf_read'          : format_true_false(flag_direct_netcdf_io),
         'direct_netcdf_write'         : format_true_false(flag_direct_netcdf_io),
+        'ens_size' :  '{:d}'.format(Ne),
+        'first_obs_days' : '-1',
+        'first_obs_seconds': '-1',
+        'inf_damping'                 : '{0:f}, {1:f}'.format(infl_damp_prior, infl_damp_post), 
+        'inf_deterministic'           : '.true.,   .true.,',
+        'inf_diag_file_name'          : '"prior_inf_diag", "post_inf_diag"',
+        'inf_flavor'               : '{0:d}, {1:d}'.format(infl_flavor_prior,infl_flavor_post),
+        'inf_in_file_name'            :  '"prior_inf_ic_old", "post_inf_ic_old"',
+        'inf_initial'                 : '{0:f}, {1:f}'.format(infl_mean_init_prior, infl_mean_init_post),
+        'inf_initial_from_restart' : '{0:s}, {0:s}'.format(format_true_false(write_prior_inf)),
+        'inf_lower_bound'             : '{0:f}, {1:f}'.format(infl_lb_prior, infl_lb_post),
+        'inf_out_file_name'           : '"prior_inf_ic_new", "post_inf_ic_new"',
+        'inf_output_restart'          : '.true.,   .true.,',
+        'inf_sd_initial'              : '{0:f}, {1:f}'.format(infl_sd_init_prior, infl_sd_init_post),
+        'inf_sd_initial_from_restart' : '{0:s}, {0:s}'.format(format_true_false(write_prior_inf)),
+        'inf_sd_lower_bound'          : '{0:f}, {1:f}'.format(infl_sd_lb_prior, infl_sd_lb_post),
+        'inf_upper_bound'             : '{0:f}, {1:f}'.format(infl_ub_prior, infl_ub_post),
+        'init_time_days' :  '-1',
+        'init_time_seconds' : '-1',
+        'last_obs_days' : '-1',
+        'last_obs_seconds'         : '-1',
+        'num_groups'               : '1',
+        'num_output_obs_members'   : '{:d}'.format(Ne),
+        'num_output_state_members' : '{:d}'.format(Ne),
+        'obs_sequence_in_name' : '"obs_seq.prior"',
+        'obs_sequence_out_name': '"obs_seq.posterior"',
+        'output_forward_op_errors' : '.false.',
+        'output_interval'          : '1',
+        'output_restart' :  '.true.',
+        'output_timestamps'        : '.false.',
+        'restart_in_file_name' : '"filter_ic_old"',
+        'restart_out_file_name' : '"filter_ic_new"', 
+        'silence'                  : '.false.',
+        'start_from_restart' :  '.true.',
+        'trace_execution'          : '.true.',
+    }
+    namelist['model_mod_check'] = {
+        'run_test'    : '2',
+        'num_ens'     : '1',
     }
 
     namelist['io_filenames'] = {
@@ -137,11 +162,11 @@ def set_namelist_sectors():
     }
 
     namelist['state_vector_io'] = {
-        'limit_mem' : '2147483640',
-        'limit_procs' : '100000',
-        'create_restarts' : '.false.',
-        'time_unlimited' : '.true.',
+        'perturbation_amplitude'  : '0.2',
+        'single_restart_file_out' : '.true.',
+        'write_binary_restart_files' : '.false.',
     }
+
 
     namelist['smoother'] = {
         'num_lags'              : '0',
@@ -152,13 +177,17 @@ def set_namelist_sectors():
     }
 
     namelist['assim_tools'] = {
-        'filter_kind'                   : '{:d}'.format(assim_meth),
+        'adaptive_localization_threshold' : '-1',
         'cutoff'                          : cov_cutoff,
+        'filter_kind'                   : '{:d}'.format(assim_meth),
+        'gaussian_likelihood_tails'       : '.false.',
+        'localization_diagnostics_file'   : 'localization_diagnostics',
+        'output_localization_diagnostics' : '.false.',
+        'print_every_nth_obs'             : '100',
+        'rectangular_quadrature'          : '.true.',
+        'sampling_error_correction'       : '.false.',
         'sort_obs_inc'                    : '.false.',
         'spread_restoration'              : '.false.',
-        'sampling_error_correction'       : '.true.',
-        'adaptive_localization_threshold' : '1600',
-        'print_every_nth_obs'             : '100',
     }
 
     namelist['cov_cutoff'] = {
@@ -185,8 +214,16 @@ def set_namelist_sectors():
                                  '../../../obs_def/obs_def_QuikSCAT_mod.f90',
                                  '../../../obs_def/obs_def_vortex_mod.f90',
                                  '../../../obs_def/obs_def_uw_supplemental_mod.f90',
-                                 '../../../obs_def/obs_def_alt_tendency_mod.f90'"""
+                                 '../../../obs_def/obs_def_alt_tendency_mod.f90'""",
+        'overwrite_output'       : '.true.',
+    
     }
+
+    namelist['quality_control'] = {
+        'enable_special_outlier_code' : '.false.',
+        'input_qc_threshold'          : '3.0',
+        'outlier_threshold'           : '-1.0',
+    }    
 
     namelist['obs_kind'] = {
         'assimilate_these_obs_types' : make_obs_list(eval=False),
@@ -214,7 +251,7 @@ def set_namelist_sectors():
     }
 
     namelist['assim_model'] = {
-      'write_binary_restart_files' : '.true.',
+      #'write_binary_restart_files' : '.true.',
       'netCDF_large_file_support'  : '.true.',
     }
 
@@ -227,38 +264,18 @@ def set_namelist_sectors():
     #     periodic_y, and scm
 
     namelist['model'] = {
-        'default_state_variables'     : '.false.',
-        'wrf_state_variables'         : get_wrf_state_vars()[0],
-        'wrf_state_bounds'            : get_wrf_state_vars()[1],   
         'output_state_vector'         : '.false.',
-        'num_domains'                 : '{:d}'.format(max_dom),
-        'calendar_type'               : '3',
-        'sfc_elev_max_diff'           : '{:f}'.format(sfc_elev_tol),
+        'assimilation_period_days'    : '0',
         'assimilation_period_seconds' : '{:d}'.format(cycle_len*60),
-        'allow_obs_below_vol'         : '.false.',
-        'vert_localization_coord'     : '{:d}'.format(vert_loc_coord),
-        'center_search_half_length'   : '200000.',
-        'center_spline_grid_scale'    : '5',
-        'circulation_pres_level'      : '80000.0',
-        'circulation_radius'          : '200000.0',
-        'polar'                       : '.false.',
-        'periodic_x'                  : '.false.',
-        'periodic_y'                  : '.false.',
-        'scm'                         : '.false.',
+        'model_perturbation_amplitude':'0.2',
+        'model_restart_dirname'       : '.',
+        'grid_filename'               : 'cm1out_rst_000001.nc',
+        'calendar'                    : '"Gregorian"',  
+        'debug'                       : '1',
+
+        'model_variables'         : get_model_state_vars()[0],
     }
 
-    namelist['dart_to_wrf'] = {
-        'model_advance_file' : '.false.',
-        'dart_restart_name'  : '"dart_wrf_vector"',
-        'adv_mod_command'    : '"./wrf.exe"',
-    }
-
-
-    namelist['wrf_to_dart'] = {
-        'dart_restart_name'  : '"dart_wrf_vector"',
-        'print_data_ranges'  : '.true.',
-        'debug'              : '.true.',
-    }
 
 
     namelist['location'] = {
@@ -308,28 +325,33 @@ def set_namelist_sectors():
     }
 
     namelist['obs_diag'] = {
-        'obs_sequence_name'     : '"obs_seq.diag"',
-        'first_bin_center'      : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'last_bin_center'       : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'bin_separation'        : '0,  0,  0,  {:s},  0,  0'.format(cycle_len_hrs),
-        'bin_width'             : '0,  0,  0,  {:s},  0,  0'.format(cycle_len_hrs),
-        'time_to_skip'          : '0,  0,  0,  0,  0,  0',
-        'max_num_bins'          : '10000',
-        'Nregions'              : '1',
+        'bin_width_days'        : '-1',
+        'bin_width_seconds'     : '-1',
+        'create_rank_histogram' : '.true.',
+        'int_skip_days'         : '0',
+        'int_skip_seconds'      : '0',
         'lonlim1'               : '0.0',
         'lonlim2'               : '360.0',
-        'latlim1'               : '-89.0',
-        'latlim2'               :  '89.0', 
-        'reg_names'             : '"Full Domain"',
-        'print_mismatched_locs' : '.false.',
+        'Nregions'              : '1',
+        'obs_sequence_name'     : '"obs_seq.diag"',
+        'outliers_in_histogram' : '.true.',
+        'reg_names'             : 'whole',
+        'trusted_obs'           : 'null',
+        'use_zero_error_obs'    : '.false',
         'verbose'               : '{:s}'.format(obs_diag_verbose),
     }
 
     namelist['schedule'] = {
         'calendar'              : '"Gregorian"',  
-        'first_bin_start'       : '{:%Y, %m, %d, %H, %M, %S}'.format(start_window), 
-        'first_bin_end'         : '{:%Y, %m, %d, %H, %M, %S}'.format(end_window), 
-        'last_bin_end'          : '{:%Y, %m, %d, %H, %M, %S}'.format(end_window), 
+        'first_bin_start'       : '{:d}, {:d}, {:d}, {:d}, {:d}, {:d}'.format(\
+            start_window.year, start_window.month, start_window.day,\
+            start_window.hour, start_window.minute, start_window.second), 
+        'first_bin_end'       : '{:d}, {:d}, {:d}, {:d}, {:d}, {:d}'.format(\
+            end_window.year, end_window.month, end_window.day,\
+            end_window.hour, end_window.minute, end_window.second), 
+        'last_bin_end'       : '{:d}, {:d}, {:d}, {:d}, {:d}, {:d}'.format(\
+            end_window.year, end_window.month, end_window.day,\
+            end_window.hour, end_window.minute, end_window.second), 
         'bin_interval_days'     : '0',
         'bin_interval_seconds'  : '{:d}'.format(bin_int_seconds),   
         'max_num_bins'          : '1',
@@ -337,50 +359,43 @@ def set_namelist_sectors():
     }
 
     namelist['obs_seq_to_netcdf'] = {
+        'append_to_netcdf'  : '.false.',
         'obs_sequence_name' : '"obs_seq.posterior"',
         'lonlim1'           : '0.0',
         'lonlim2'           : '360.0',
-        'latlim1'           : '-89.9',
-        'latlim2'           :  '89.9',
         'verbose'           :  '.true.',
     }
 
     namelist['restart_file_tool'] = {
-        'input_file_name'              : '"restart_file_input"',
-        'output_file_name'             : '"restart_file_output"',
         'ens_size'                     : '{:d}'.format(Ne),
+        'gregorian_calendar'           : '.false.',
+        'input_file_name'              : '"restart_file_input"',
+        'input_is_model_advance_file'  : '.false.',
+        'new_advance_days'                : '-1',
+        'new_advance_secs'                : '-1',
+        'new_data_days'                : '-1',
+        'new_data_secs'                : '-1',
+        'output_file_name'             : '"restart_file_output"',
+        'output_is_model_advance_file' : '.true.',
+        'overwrite_advance_time'       : '.true.',
+        'overwrite_data_time'          : '.false.',
         'single_restart_file_in'       : '.true.',
         'single_restart_file_out'      : '.true.',
         'write_binary_restart_files'   : '.true.',
-        'overwrite_data_time'          : '.false.',
-        'new_data_days'                : '-1',
-        'new_data_secs'                : '-1',
-        'input_is_model_advance_file'  : '.false.',
-        'output_is_model_advance_file' : '.true.',
-        'overwrite_advance_time'       : '.true.',
-        'new_advance_days'             : '0',
-        'new_advance_secs'             : '0', 
     }
 
 
 
     namelist['obs_sequence_tool'] = {
-        'num_input_files'   : '1', 
-        'filename_seq'      : '"{:%Y%m%d%H}_obs_seq.prior"'.format(assim_time),
         'filename_out'      : '"obs_seq.processed"',
+        'filename_seq'      : '"{:d}_obs_seq.prior"'.format(assim_time_sec),
         'filename_seq_list' : '""',
         'first_obs_days'    : '{:d}'.format(first_ob.days), 
         'first_obs_seconds' : '{:d}'.format(first_ob.seconds), 
+        'gregorian_cal'     : '.true.',
         'last_obs_days'     : '{:d}'.format(last_ob.days), 
         'last_obs_seconds'  : '{:d}'.format(last_ob.seconds), 
-        'obs_types'         : '""', 
-        'keep_types'        : '.false.', 
         'print_only'        : '.false.', 
-        'min_lat'           : '-90.0', 
-        'max_lat'           : '90.0', 
-        'min_lon'           : '0.0', 
-        'max_lon'           : '360.0',
-        'gregorian_cal'     : '.true.',
         'synonymous_copy_list' : '"observation", "NCEP observation"',
     }
 
@@ -468,7 +483,7 @@ def set_namelist_sectors():
     namelist['inflate_ens'] = {
         'ens_size'    : '{:d}'.format(Ne),
         'infl_scale'  : '{:f}'.format(init_assim_scale),
-        'num_domains' : '{:d}'.format(max_dom),
+        'num_domains' : '1',
         'inflate_tsk' : format_true_false(inflate_tsk),
         'inflate_lsm' : format_true_false(inflate_lsm),
     }
@@ -490,10 +505,14 @@ def set_namelist_sectors():
         'textfile_out'            : '"obsdef_mask.txt"',
         'netcdf_out'              : '"obsdef_mask.nc"',
         'calendar'                : '"gregorian"',
-        'first_analysis'          : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'last_analysis'           : '{:%Y, %m, %d, %H, %M, %S}'.format(assim_time),
-        'forecast_length_days'    :'{:s}'.format(cycle_len_days),
-        'forecast_length_seconds' :  '{:s}'.format(cycle_len_seconds),
+        'first_analysis'       : '{:d}, {:d}, {:d}, {:d}, {:d}, {:d}'.format(\
+            assim_time_date.year, assim_time_date.month, assim_time_date.day,\
+            assim_time_date.hour, assim_time_date.minute, assim_time_date.second), 
+        'last_analysis'       : '{:d}, {:d}, {:d}, {:d}, {:d}, {:d}'.format(\
+            assim_time_date.year, assim_time_date.month, assim_time_date.day,\
+            assim_time_date.hour, assim_time_date.minute, assim_time_date.second), 
+        'forecast_length_days'    :'{:d}'.format(cycle_len_days),
+        'forecast_length_seconds' :  '{:d}'.format(cycle_len_seconds),
         'verification_interval_seconds' : '10800',
         'temporal_coverage_percent' : '100.0',
         'lonlim1'                 : '0.0',
@@ -667,83 +686,72 @@ def make_obs_list(eval=False):
     obs_text = ",\n          ".join(obs_list)
     return obs_text
 
-def get_wrf_state_vars():
+def get_model_state_vars():
     """ Gets the requested state vars based on parameters in WRF_dart_param """
     if minimal_vars:
-        default_vars = '''    'PH','KIND_GEOPOTENTIAL_HEIGHT','TYPE_GZ','UPDATE','999',
-                              'QVAPOR','KIND_VAPOR_MIXING_RATIO','TYPE_QV','UPDATE','999',
-                              'T','KIND_POTENTIAL_TEMPERATURE','TYPE_T','UPDATE','999',
-                              'MU','KIND_PRESSURE','TYPE_MU','UPDATE','999',
+        default_vars = '''    'qv','KIND_VAPOR_MIXING_RATIO','UPDATE','NULL','NULL',
+                              'theta','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
+                              'ppi','KIND_PRESSURE','UPDATE','NULL','NULL',
                               '''
     else:
-        default_vars = '''    'U','KIND_U_WIND_COMPONENT','TYPE_U','UPDATE','999',
-                                'V','KIND_V_WIND_COMPONENT','TYPE_V','UPDATE','999',
-                                'W','KIND_VERTICAL_VELOCITY','TYPE_W','UPDATE','999',
-                                'T','KIND_POTENTIAL_TEMPERATURE','TYPE_T','UPDATE','999',
-                                'PH','KIND_GEOPOTENTIAL_HEIGHT','TYPE_GZ','UPDATE','999',
-                                'MU','KIND_PRESSURE','TYPE_MU','UPDATE','999',
+        default_vars = '''    'ua','KIND_U_WIND_COMPONENT','UPDATE','NULL','NULL',
+                                'va','KIND_V_WIND_COMPONENT','UPDATE','NULL','NULL',
+                                'wa','KIND_VERTICAL_VELOCITY','UPDATE','NULL','NULL',
+                                'theta','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
+                                'ppi','KIND_PRESSURE','UPDATE','NULL','NULL',
                                 '''
 
 
     # Decide what additional variables to update
     if update_surf:
-        default_vars = default_vars + ''''U10','KIND_U_WIND_COMPONENT','TYPE_U10','UPDATE','999',
-                                'V10','KIND_V_WIND_COMPONENT','TYPE_V10','UPDATE','999',
-                                'T2','KIND_TEMPERATURE','TYPE_T2','UPDATE','999',
-                                'TH2','KIND_POTENTIAL_TEMPERATURE','TYPE_TH2','UPDATE','999',
-                                'Q2','KIND_SPECIFIC_HUMIDITY','TYPE_Q2','UPDATE','999',
+        default_vars = default_vars + ''' 'u10','KIND_U_WIND_COMPONENT','UPDATE','NULL','NULL',
+                                'v10','KIND_V_WIND_COMPONENT','UPDATE','NULL','NULL',
+                                't2','KIND_TEMPERATURE','UPDATE','NULL','NULL',
+                                'th2','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
+                                'q2','KIND_SPECIFIC_HUMIDITY','UPDATE','NULL','NULL',
                                 '''
                    
     if update_psfc:
-        default_vars += "'PSFC','KIND_PRESSURE','TYPE_PS','UPDATE','999',\n"
+        default_vars += "'psfc','KIND_PRESSURE','UPDATE','NULL','NULL',\n"
     if flag_compute_tendency:
-        default_vars +=  "'ALT_TEND','KIND_ALTIMETER_TENDENCY','TYPE_ALTTEND','UPDATE','999',\n"
+        default_vars +=  "'alt_tend','KIND_ALTIMETER_TENDENCY','UPDATE','NULL','NULL',\n"
     if update_tsk:
-        default_vars += "'TSK','KIND_SKIN_TEMPERATURE','TYPE_TSK','UPDATE','999',\n"
+        default_vars += "'tsk','KIND_SKIN_TEMPERATURE','UPDATE','NULL','NULL',\n"
     if update_lsm:
-        # Updates Soil Temperature (TSLB), Soil Moisture (SMOIS), Unfrozen soil
-        # moisture content (SH2O)
-        default_vars += "                                 'TSLB','KIND_SOIL_TEMPERATURE', 'TYPE_TSLB','UPDATE','999',\n"
-        default_vars += "                                 'SMOIS','KIND_SOIL_MOISTURE', 'TYPE_SMOIS','UPDATE','999',\n"
-        default_vars += "                                 'SH20','KIND_SOIL_LIQUID_WATER', 'TYPE_SH2O','UPDATE','999',\n"
+        # Updates Soil Temperature (TSLB)
+        default_vars += "                                 'tslb1','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
+        default_vars += "                                 'tslb2','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
+        default_vars += "                                 'tslb3','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
+        default_vars += "                                 'tslb4','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
+        default_vars += "                                 'tslb5','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
     # Update appropriate number of moisture variables in state vector
     if num_moist_vars >= 3:
         if not minimal_vars:
-            default_vars +=  """                                'QVAPOR','KIND_VAPOR_MIXING_RATIO','TYPE_QV','UPDATE','999',
-                                'QCLOUD','KIND_CLOUD_LIQUID_WATER','TYPE_QC','UPDATE','999',
-                                'QRAIN','KIND_RAINWATER_MIXING_RATIO','TYPE_QR','UPDATE','999'"""
+            default_vars +=  """                                'qv','KIND_VAPOR_MIXING_RATIO','UPDATE','NULL','NULL',
+                                'qc','KIND_CLOUD_LIQUID_WATER','UPDATE','NULL','NULL',
+                                'qr','KIND_RAINWATER_MIXING_RATIO','UPDATE','NULL','NULL'"""
 
-        wrf_state_bounds = """ 'QVAPOR','0.0','NULL','CLAMP',
-                             'QRAIN','0.0','NULL','CLAMP',
-                             'QCLOUD','0.0','NULL','CLAMP'"""
         if num_moist_vars == 3:
             default_vars +="""\n"""
-            wrf_state_bounds +="""\n"""
         else:
             default_vars +=""",\n"""
-            wrf_state_bounds +=""",\n"""
 
     if num_moist_vars >= 5:
         if not minimal_vars:
-            default_vars +=  """                                'QICE','KIND_CLOUD_ICE','TYPE_QI','UPDATE','999',
-                                'QSNOW','KIND_SNOW_MIXING_RATIO','TYPE_QS','UPDATE','999'"""
-        wrf_state_bounds +=  """ 'QICE','0.0','NULL','CLAMP',
-                             'QSNOW','0.0','NULL','CLAMP'"""
+            default_vars +=  """                                'qi','KIND_CLOUD_ICE','UPDATE','NULL','NULL',
+                                'qs','KIND_SNOW_MIXING_RATIO','UPDATE','NULL','NULL'"""
         if num_moist_vars == 5: 
             default_vars +="""\n"""
-            wrf_state_bounds +="""\n"""
         else:
             default_vars +=""",\n"""
-            wrf_state_bounds +=""",\n"""
 
 
 
     if num_moist_vars >= 6:
         if not minimal_vars:
-            default_vars +=  """                               'QGRAUP','KIND_GRAUPEL_MIXING_RATIO','TYPE_QG','UPDATE','999'"""
-        wrf_state_bounds += """ 'QGRAUP','0.0','NULL','CLAMP'"""
+            default_vars +=  """                                'qg','KIND_GRAUPEL_MIXING_RATIO','UPDATE','NULL','NULL'"""
 
-    return default_vars, wrf_state_bounds
+    return [default_vars]
 
 
 
