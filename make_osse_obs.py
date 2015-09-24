@@ -3,7 +3,7 @@ from __future__ import division, print_function
 import os, sys
 import re
 from netCDF4 import Dataset
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
+sys.path.append('/glade/p/work/lmadaus/cm1/kffc_ensemble')
 from ens_dart_param import *
 
 """
@@ -15,8 +15,43 @@ GENERATE_IDEAL_OBS = True
 
 
 def main():
-    if GENERATE_IDEAL_OBS:
-        generate_ideal_obs(intime=0)
+
+    build_obs_structure(0)
+
+    #if GENERATE_IDEAL_OBS:
+    #    generate_ideal_obs(intime=0)
+
+def build_obs_structure(intime, gridspace=8):
+    """ Function to specify what variables we want and how dense they should be """
+    from make_namelist_dart import set_namelist_sectors, write_namelist
+    from write_cm1_namelist import set_namelist_defaults
+    # Generate the DART namelist structure so we
+    # can query (and modify) it
+    dartnml = set_namelist_sectors()
+    cm1nml = set_namelist_defaults()
+    # Parse out the observations to assimilate
+    use_obs = [s.strip()[1:-1] for s in dartnml['obs_kind']['assimilate_these_obs_types'].split(',')]
+    # I'm just testing this for now
+    use_obs = [use_obs[1]]
+    print(use_obs)
+
+    # Figure out the grid structure
+    dx = cm1nml['param1']['dx']
+    dy = cm1nml['param1']['dy']
+    nx = cm1nml['param0']['nx']
+    ny = cm1nml['param0']['ny']
+
+    # Now figure out how many obs we'll need
+    gridspace *= 1000
+    obx = range(0,int(nx*dx),gridspace)
+    oby = range(0,int(ny*dx),gridspace)
+    total_obs = len(obx)*len(oby)*len(use_obs)
+    print("Total number of obs:", total_obs)
+    
+    
+
+
+
 
 def generate_ideal_obs(intime):
     """
