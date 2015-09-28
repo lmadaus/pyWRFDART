@@ -85,28 +85,32 @@ def set_namelist_sectors():
     namelist = {}
     # Here we define each block of the input.nml file separately
     namelist['perfect_model_obs'] = {
-        'adv_ens_command' : '../shell_scripts/advance_model.csh',
-        'async'                    : '0',
+        'adv_ens_command'          : "'./advance_model.csh'",
+        'async'                    : '2',
+        'direct_netcdf_read'       : '.true.',
+        'direct_netcdf_write'      : '.true.',
         'first_obs_days'           : '-1',
         'first_obs_seconds'        : '-1',
-        'init_time_days'           : '0',
-        'init_time_seconds'        : '0',
+        'init_time_days'           : '-1',
+        'init_time_seconds'        : '-1',
         'last_obs_days'            : '-1',
         'last_obs_seconds'         : '-1',
-        'obs_seq_in_file_name'     : 'obs_seq.in',
-        'obs_seq_out_file_name'    : 'obs_seq.out',
-        'output_forward_op_errors' : '.false',
+        'obs_seq_in_file_name'     : "'obs_seq.in'",
+        'obs_seq_out_file_name'    : "'obs_seq.out'",
+        'output_forward_op_errors' : '.false.',
         'output_interval'          : '1',
-        'output_restart'           : '1',
+        'output_restart'           : '.true.',
         'output_timestamps'        : '.false.',
         'print_every_nth_obs'      : '-1',
-        'restart_in_file_name'     : 'perfect_ics',
-        'restart_out_file_name'    : 'perfect_restart',
+        'restart_in_file_name'     : "'cm1out_rst_000001.nc'",
+        'restart_out_file_name'    : "'perfect_restart'",
         'silence'                  : '.false.',
         'start_from_restart'       : '.true.',
-        'trace_execution'          : '.false.',
+        'trace_execution'          : '.true.',
 
     }
+
+    namelist['obs_model'] = {}
 
     namelist['filter'] = {
         'async' : '{:d}'.format(async),
@@ -151,8 +155,14 @@ def set_namelist_sectors():
         'trace_execution'          : '.true.',
     }
     namelist['model_mod_check'] = {
-        'run_test'    : '2',
+        'input_file'  : "'dart_ics.nc'",
+        'output_file' : "'check_me.nc'",
+        'x_ind'       : '1000000',
         'num_ens'     : '1',
+        'loc_of_interest' : '1000.0, 500.0, 120.0',
+        'kind_of_interest' : 'KIND_TEMPERATURE',
+        'verbose'      : '.true.',
+        'run_test'    : '4',
     }
 
     namelist['io_filenames'] = {
@@ -198,24 +208,21 @@ def set_namelist_sectors():
     namelist['obs_sequence'] = {
         'write_binary_obs_sequence' : '.false.'
     }
-
+    dartdat = {'dartdir' : dir_src_dart}
     namelist['preprocess'] = {
-        'input_obs_kind_mod_file'  : "'../../../obs_kind/DEFAULT_obs_kind_mod.F90'",
-        'output_obs_kind_mod_file' : "'../../../obs_kind/obs_kind_mod.f90'",
-        'input_obs_def_mod_file'   : "'../../../obs_def/DEFAULT_obs_def_mod.F90'",
-        'output_obs_def_mod_file'  : "'../../../obs_def/obs_def_mod.f90'",
-        'input_files'              : """'../../../obs_def/obs_def_reanalysis_bufr_mod.f90',
-                                 '../../../obs_def/obs_def_altimeter_mod.f90',
-                                 '../../../obs_def/obs_def_radar_mod.f90',
-                                 '../../../obs_def/obs_def_metar_mod.f90',
-                                 '../../../obs_def/obs_def_dew_point_mod.f90',
-                                 '../../../obs_def/obs_def_gps_mod.f90',
-                                 '../../../obs_def/obs_def_gts_mod.f90',
-                                 '../../../obs_def/obs_def_QuikSCAT_mod.f90',
-                                 '../../../obs_def/obs_def_vortex_mod.f90',
-                                 '../../../obs_def/obs_def_uw_supplemental_mod.f90',
-                                 '../../../obs_def/obs_def_alt_tendency_mod.f90'""",
-        'overwrite_output'       : '.true.',
+        'input_obs_kind_mod_file'  : "'{:s}/../../../obs_kind/DEFAULT_obs_kind_mod.F90'".format(dir_src_dart),
+        'output_obs_kind_mod_file' : "'{:s}/../../../obs_kind/obs_kind_mod.f90'".format(dir_src_dart),
+        'input_obs_def_mod_file'   : "'{:s}/../../../obs_def/DEFAULT_obs_def_mod.F90'".format(dir_src_dart),
+        'output_obs_def_mod_file'  : "'{:s}/../../../obs_def/obs_def_mod.f90'".format(dir_src_dart),
+        'input_files'              : """'{dartdir}/../../../obs_def/obs_def_reanalysis_bufr_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_altimeter_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_radar_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_metar_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_dew_point_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_gps_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_gts_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_QuikSCAT_mod.f90',
+                                 '{dartdir}/../../../obs_def/obs_def_vortex_mod.f90""".format(**dartdat),
     
     }
 
@@ -252,7 +259,7 @@ def set_namelist_sectors():
 
     namelist['assim_model'] = {
       #'write_binary_restart_files' : '.true.',
-      'netCDF_large_file_support'  : '.true.',
+      'netCDF_large_file_support'  : '.false.',
     }
 
     # Notes for model_nml:
@@ -264,14 +271,15 @@ def set_namelist_sectors():
     #     periodic_y, and scm
 
     namelist['model'] = {
-        'output_state_vector'         : '.false.',
+        'output_state_vector'         : '.true.',
         'assimilation_period_days'    : '0',
-        'assimilation_period_seconds' : '{:d}'.format(cycle_len*60),
+        #'assimilation_period_seconds' : '{:d}'.format(cycle_len*60),
+        'assimilation_period_seconds' : '60',
         'model_perturbation_amplitude':'0.2',
-        'model_restart_dirname'       : '.',
-        'grid_filename'               : 'cm1out_rst_000001.nc',
+        'model_restart_dirname'       : "'.'",
+        'cm1_template_file'           : "'cm1out_rst_000001.nc'",
         'calendar'                    : '"Gregorian"',  
-        'debug'                       : '1',
+        'debug'                       : '100',
 
         'model_variables'         : get_model_state_vars()[0],
     }
@@ -279,14 +287,14 @@ def set_namelist_sectors():
 
 
     namelist['location'] = {
-        'horiz_dist_only'             : '{:s}'.format(horizontal_localization_only),
-        'vert_normalization_pressure' : '{:s}'.format(vert_norm_pres), 
-        'vert_normalization_height'   : '{:s}'.format(vert_norm_hght),
-        'vert_normalization_level'    : '{:s}'.format(vert_norm_lev),
-        'approximate_distance'        : '.false.', 
-        'nlon'                        : '71',
-        'nlat'                        : '36',
-        'output_box_info'             : '.false.',
+        '!horiz_dist_only'             : '{:s}'.format(horizontal_localization_only),
+        '!vert_normalization_pressure' : '{:s}'.format(vert_norm_pres), 
+        '!vert_normalization_height'   : '{:s}'.format(vert_norm_hght),
+        '!vert_normalization_level'    : '{:s}'.format(vert_norm_lev),
+        '!approximate_distance'        : '.false.', 
+        '!nlon'                        : '71',
+        '!nlat'                        : '36',
+        '!output_box_info'             : '.false.',
     }
 
     namelist['utilities'] = {
@@ -304,9 +312,9 @@ def set_namelist_sectors():
     }
 
     namelist['ensemble_manager'] = {
-        'single_restart_file_in'  : '.false.',
-        'single_restart_file_out' : '.false.',
-        'perturbation_amplitude'  : '0.0',
+        '!single_restart_file_in'  : '.false.',
+        '!single_restart_file_out' : '.false.',
+        '!perturbation_amplitude'  : '0.0',
     }
 
     namelist['closest_member_tool'] = {
@@ -560,6 +568,8 @@ def make_obs_list(eval=False):
     if use_obs_surface:
         if sfc_pressure[eval]:
             obs_list.append("'METAR_SURFACE_PRESSURE'")
+        if ideal_sfc_pressure[eval]:
+            obs_list.append("'LAND_SFC_PRESSURE'")
         if sfc_altimeter[eval]:
             obs_list.append("'METAR_ALTIMETER'")
             obs_list.append("'LAND_SFC_ALTIMETER'")
@@ -580,6 +590,9 @@ def make_obs_list(eval=False):
             obs_list.append("'METAR_V_10_METER_WIND'")
             obs_list.append("'LAND_SFC_V_WIND_COMPONENT'")
             obs_list.append("'MARINE_SFC_V_WIND_COMPONENT'")
+        if ideal_sfc_wind[eval]:
+            obs_list.append("'LAND_SFC_U_WIND_COMPONENT'")
+            obs_list.append("'LAND_SFC_V_WIND_COMPONENT'")
         if wunderground_wind[eval]:
             obs_list.append("'WUNDERGROUND_U_WIND_COMPONENT'")
             obs_list.append("'WUNDERGROUND_V_WIND_COMPONENT'")
@@ -587,12 +600,16 @@ def make_obs_list(eval=False):
             obs_list.append("'METAR_TEMPERATURE_2_METER'")
             obs_list.append("'LAND_SFC_TEMPERATURE'")
             obs_list.append("'MARINE_SFC_TEMPERATURE'")
+        if ideal_sfc_temp[eval]:
+            obs_list.append("'LAND_SFC_TEMPERATURE'")
         if wunderground_temp[eval]:
             obs_list.append("'WUNDERGROUND_TEMPERATURE'")
         if sfc_humidity[eval]:
             obs_list.append("'METAR_SPECIFIC_HUMIDITY_2_METER'")
             obs_list.append("'LAND_SFC_SPECIFIC_HUMIDITY'")
             obs_list.append("'MARINE_SFC_SPECIFIC_HUMIDITY'")
+        if ideal_sfc_humidity[eval]:
+            obs_list.append("'LAND_SFC_SPECIFIC_HUMIDITY'")
         if wunderground_dewp[eval]:
             obs_list.append("'WUNDERGROUND_DEWPOINT'")
     if use_obs_pacnw:
@@ -689,47 +706,49 @@ def make_obs_list(eval=False):
 def get_model_state_vars():
     """ Gets the requested state vars based on parameters in WRF_dart_param """
     if minimal_vars:
-        default_vars = '''    'qv','KIND_VAPOR_MIXING_RATIO','UPDATE','NULL','NULL',
-                              'theta','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
+        default_vars = '''    'ua','KIND_U_WIND_COMPONENT','UPDATE','NULL','NULL',
+                              'theta','KIND_TEMPERATURE','UPDATE','0.0','NULL',
                               'ppi','KIND_PRESSURE','UPDATE','NULL','NULL',
+                              'va','KIND_V_WIND_COMPONENT','UPDATE','NULL','NULL',
                               '''
     else:
         default_vars = '''    'ua','KIND_U_WIND_COMPONENT','UPDATE','NULL','NULL',
                                 'va','KIND_V_WIND_COMPONENT','UPDATE','NULL','NULL',
                                 'wa','KIND_VERTICAL_VELOCITY','UPDATE','NULL','NULL',
-                                'theta','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
+                                'theta','KIND_POTENTIAL_TEMPERATURE','UPDATE','0.0','NULL',
                                 'ppi','KIND_PRESSURE','UPDATE','NULL','NULL',
                                 '''
 
 
     # Decide what additional variables to update
+
     if update_surf:
         default_vars = default_vars + ''' 'u10','KIND_U_WIND_COMPONENT','UPDATE','NULL','NULL',
                                 'v10','KIND_V_WIND_COMPONENT','UPDATE','NULL','NULL',
-                                't2','KIND_TEMPERATURE','UPDATE','NULL','NULL',
-                                'th2','KIND_POTENTIAL_TEMPERATURE','UPDATE','NULL','NULL',
-                                'q2','KIND_SPECIFIC_HUMIDITY','UPDATE','NULL','NULL',
+                                't2','KIND_TEMPERATURE','UPDATE','0.0','NULL',
+                                'th2','KIND_POTENTIAL_TEMPERATURE','UPDATE','0.0','NULL',
+                                'q2','KIND_SPECIFIC_HUMIDITY','UPDATE','0.0','NULL',
                                 '''
                    
     if update_psfc:
-        default_vars += "'psfc','KIND_PRESSURE','UPDATE','NULL','NULL',\n"
+        default_vars += "'psfc','KIND_SURFACE_PRESSURE','UPDATE','0.0','NULL',\n"
     if flag_compute_tendency:
         default_vars +=  "'alt_tend','KIND_ALTIMETER_TENDENCY','UPDATE','NULL','NULL',\n"
     if update_tsk:
-        default_vars += "'tsk','KIND_SKIN_TEMPERATURE','UPDATE','NULL','NULL',\n"
+        default_vars += "'tsk','KIND_SKIN_TEMPERATURE','UPDATE','0.0','NULL',\n"
     if update_lsm:
         # Updates Soil Temperature (TSLB)
-        default_vars += "                                 'tslb1','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
-        default_vars += "                                 'tslb2','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
-        default_vars += "                                 'tslb3','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
-        default_vars += "                                 'tslb4','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
-        default_vars += "                                 'tslb5','KIND_SOIL_TEMPERATURE', 'UPDATE','NULL','NULL',\n"
+        default_vars += "                                 'tslb1','KIND_SOIL_TEMPERATURE', 'UPDATE','0.0','NULL',\n"
+        default_vars += "                                 'tslb2','KIND_SOIL_TEMPERATURE', 'UPDATE','0.0','NULL',\n"
+        default_vars += "                                 'tslb3','KIND_SOIL_TEMPERATURE', 'UPDATE','0.0','NULL',\n"
+        default_vars += "                                 'tslb4','KIND_SOIL_TEMPERATURE', 'UPDATE','0.0','NULL',\n"
+        default_vars += "                                 'tslb5','KIND_SOIL_TEMPERATURE', 'UPDATE','0.0','NULL',\n"
     # Update appropriate number of moisture variables in state vector
     if num_moist_vars >= 3:
         if not minimal_vars:
-            default_vars +=  """                                'qv','KIND_VAPOR_MIXING_RATIO','UPDATE','NULL','NULL',
-                                'qc','KIND_CLOUD_LIQUID_WATER','UPDATE','NULL','NULL',
-                                'qr','KIND_RAINWATER_MIXING_RATIO','UPDATE','NULL','NULL'"""
+            default_vars +=  """                                'qv','KIND_VAPOR_MIXING_RATIO','UPDATE','0.0','NULL',
+                                'qc','KIND_CLOUD_LIQUID_WATER','UPDATE','0.0','NULL',
+                                'qr','KIND_RAINWATER_MIXING_RATIO','UPDATE','0.0','NULL'"""
 
         if num_moist_vars == 3:
             default_vars +="""\n"""
@@ -738,8 +757,8 @@ def get_model_state_vars():
 
     if num_moist_vars >= 5:
         if not minimal_vars:
-            default_vars +=  """                                'qi','KIND_CLOUD_ICE','UPDATE','NULL','NULL',
-                                'qs','KIND_SNOW_MIXING_RATIO','UPDATE','NULL','NULL'"""
+            default_vars +=  """                                'qi','KIND_CLOUD_ICE','UPDATE','0.0','NULL',
+                                'qs','KIND_SNOW_MIXING_RATIO','UPDATE','0.0','NULL'"""
         if num_moist_vars == 5: 
             default_vars +="""\n"""
         else:
@@ -749,7 +768,7 @@ def get_model_state_vars():
 
     if num_moist_vars >= 6:
         if not minimal_vars:
-            default_vars +=  """                                'qg','KIND_GRAUPEL_MIXING_RATIO','UPDATE','NULL','NULL'"""
+            default_vars +=  """                                'qg','KIND_GRAUPEL_MIXING_RATIO','UPDATE','0.0','NULL'"""
 
     return [default_vars]
 
