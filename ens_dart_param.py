@@ -8,7 +8,7 @@ import os
 #
 #*******************************************************************************
 
-exp_name='kbmx_ensemble'                # Name of the experiment
+exp_name='kdvn_ensemble'                # Name of the experiment
  
 #**************************************************************
 #
@@ -42,7 +42,7 @@ flag_direct_netcdf_io = True       # Use experimental DART IO to read/write
 #   dir parameter below.
 #**************************************************************  
 
-dir            = '/glade/u/home/lmadaus' # MAIN DIRECTORY
+dir            = '/home/disk/pvort/nobackup/lmadaus/cm1' # MAIN DIRECTORY
 dir_dom    = dir + '/DOMAINS/' + exp_name            # Directory where main experiment is run 
 dir_longsave   = dir_dom + '/longsave'               # storage directory 
 dir_obs        = dir_dom + '/obs'                    # repository of obs.
@@ -51,8 +51,8 @@ dir_members    = dir_dom + '/mems'                   # members directory
 dir_assim      = dir_dom + '/assimilation'           # Directory where DART will be run
 
 # Directories where CM1 and DART are found
-dir_src_model      = dir + '/cm1/cm1r18/run'        # Where the model executable is located
-dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are located
+dir_src_model      = dir + '/r18/cm1r18/run'        # Where the model executable is located
+dir_src_dart      = dir + '/DART_CM1/models/cm1/work'   # Where DART executables are located
 
 #**************************************************************
 #
@@ -64,14 +64,14 @@ dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are
 #  number of processors come from here
 #**************************************************************  
 
-cluster_name        = 'yellowstone'                   # name of cluster nodes
-mpi_run_command     = 'mpirun.lsf' # Command to run MPI
-queue_members       = 'economy'                    # Queue to run members in
-queue_filter        = 'economy'                    # Queue to run filter in          
+cluster_name        = 'enkf'                   # name of cluster nodes
+mpi_run_command     = 'mpirun' # Command to run MPI
+queue_members       = 'fast'                    # Queue to run members in
+queue_filter        = 'fast'                    # Queue to run filter in          
 mpi_numprocs_member = 16                       # Number of processors for member
-mpi_numprocs_filter = 128                       # Number of processors for filter
-mpi_numprocs_flag   = ''
-#mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
+mpi_numprocs_filter = 64                       # Number of processors for filter
+#mpi_numprocs_flag   = ''
+mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
                                                           # for member.  Bluefire does
                                                           # blank for bluefire
 
@@ -98,18 +98,18 @@ grid_resolutions   = 1000.
 out_int            = 5       # Interval to write out files (in MINUTES)
 cycle_len          = 60          # Interval to write restart files (in MINUTES)
                                  # This is also the cycling frequency
-fcst_len           = 5*60        # If 0 --> no forecasts will be produced beyone the cycling interval
+fcst_len           = 300        # If 0 --> no forecasts will be produced beyone the cycling interval
                                  # If <0 --> At each cycle, after dropping a restart file at cycle_len
                                  #           minutes, the forecast will continue until reaching the
                                  #           equivalent of exp_len minutes
                                  # Else --> As above, but each forecast will be for an additional
                                  # fcst_len minutes beyond cycle_len
 
-exp_length        = 18*60        # TOTAL length of simulation (in MINUTES)
-Ne                = 10           # Number of ensemble members
+exp_length        = 10*60        # TOTAL length of simulation (in MINUTES)
+Ne                = 50           # Number of ensemble members
 N_assim           = 0           # Number of assimilations (spinup=0)
 
-assim_start       = -1          	 # Cycle to start assimilation
+assim_start       = 1          	 # Cycle to start assimilation
 assim_interval    = 1       	 # how often to assimilate obs (1=every cycle)
 inflate_start     = 3            # Which assimlation step to start inflation
 
@@ -175,16 +175,17 @@ adaptive_loc_threshold  = 1600   # Used to dynamically shrink localization in ar
                                  # 2* the localization radius is greater than this value, it
                                  # shrinks the localization radius until there are only
                                  # this many observations within that radius.
-assim_locrad            = 1000.  # localization radius (km)
+assim_locrad            = 15.  # localization radius (km)
 # cov_cutoff is the actual value put in as the localization radius. DART
 # needs the radius specified in global radians.  Do not edit this
 # calculation here -- edit the assim_locrad above
-cov_cutoff              = str(float(assim_locrad) / 2.0 / 6370.0)[0:5]
+#cov_cutoff              = str(float(assim_locrad) / 2.0 / 6370.0)[0:5]
+cov_cutoff = str(assim_locrad * 1000.)
 
 
 # model_nml
 # Describes the model state vector
-minimal_vars        = True    # ONLY update PH aloft (focus on surface, NOCYCLING ONLY!)
+minimal_vars        = False    # ONLY update PH aloft (focus on surface, NOCYCLING ONLY!)
 update_surf         = True	  # update U10, V10, T2, TH2, Q2 as the state variable
 update_psfc         = True	  # update PSFC as the state variable
 num_moist_vars      = 6	          # Depending on the microphysics scheme used,

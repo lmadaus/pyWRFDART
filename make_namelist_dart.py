@@ -97,7 +97,7 @@ def set_namelist_sectors():
         'last_obs_seconds'         : '-1',
         'obs_seq_in_file_name'     : "'obs_seq.in'",
         'obs_seq_out_file_name'    : "'obs_seq.out'",
-        'output_forward_op_errors' : '.false.',
+        'output_forward_op_errors' : '.true.',
         'output_interval'          : '1',
         'output_restart'           : '.true.',
         'output_timestamps'        : '.false.',
@@ -115,7 +115,7 @@ def set_namelist_sectors():
     namelist['filter'] = {
         'async' : '{:d}'.format(async),
         'adv_ens_command' : '"./advance_model.csh"',
-        'diagnostic_files' : '.true.',
+        'diagnostic_files' : '.false.',
         'direct_netcdf_read'          : format_true_false(flag_direct_netcdf_io),
         'direct_netcdf_write'         : format_true_false(flag_direct_netcdf_io),
         'ens_size' :  '{:d}'.format(Ne),
@@ -168,7 +168,9 @@ def set_namelist_sectors():
     namelist['io_filenames'] = {
         'restart_in_stub'       : '"../mems/m"',
         'restart_out_stub'      : '"../mems/m"',
-        'overwrite_input'       : '.true.'
+        'overwrite_input'       : '.true.',
+        'rpointer'              : '.true.',
+        'rpointer_file'         : '"input_filelist.txt"',
     }
 
     namelist['state_vector_io'] = {
@@ -276,7 +278,6 @@ def set_namelist_sectors():
         #'assimilation_period_seconds' : '{:d}'.format(cycle_len*60),
         'assimilation_period_seconds' : '60',
         'model_perturbation_amplitude':'0.2',
-        'model_restart_dirname'       : "'.'",
         'cm1_template_file'           : "'cm1out_rst_000001.nc'",
         'calendar'                    : '"Gregorian"',  
         'debug'                       : '100',

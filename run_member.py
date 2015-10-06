@@ -4,7 +4,7 @@ import os, sys
 from datetime import datetime, timedelta
 import re
 from netCDF4 import Dataset
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdnr_ensemble')
+sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
 from ens_dart_param import *
 
 
@@ -285,7 +285,10 @@ def run_cm1(mem):
     if not os.path.exists('cm1.exe'):
         os.system('ln -sf {:s}/cm1.exe'.format(dir_src_model))
     #os.system('mpirun -np %d wrf.exe' % mp_numprocs_member)
-    os.system('%s %s ./cm1.exe' % (mpi_run_command,mpi_numprocs_flag))
+    if mpi_run_command is not None:
+        os.system('%s %s ./cm1.exe' % (mpi_run_command,mpi_numprocs_flag))
+    else:
+        os.system('./cm1.exe')
 
 
 

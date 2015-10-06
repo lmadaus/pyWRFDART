@@ -18,8 +18,8 @@ GENERATE_IDEAL_OBS = True
 error_var = {'LAND_SFC_TEMPERATURE' : 1.0,
              'LAND_SFC_U_WIND_COMPONENT' : 1.0,
              'LAND_SFC_V_WIND_COMPONENT' : 1.0,
-             'LAND_SFC_PRESSURE' : 1.0,
-             'LAND_SFC_SPECIFIC_HUMIDITY' : 1.0}
+             'LAND_SFC_PRESSURE' : 100.0,
+             'LAND_SFC_SPECIFIC_HUMIDITY' : 0.001}
 
 def main():
 
@@ -28,7 +28,7 @@ def main():
     if GENERATE_IDEAL_OBS:
         generate_ideal_obs(intime=60)
 
-def build_obs_structure(intime, rst_file, gridspace=8):
+def build_obs_structure(intime, rst_file, gridspace=1):
     """ Function to specify what variables we want and how dense they should be """
     from make_namelist_dart import set_namelist_sectors, write_namelist
     from write_cm1_namelist import set_namelist_defaults
@@ -47,6 +47,7 @@ def build_obs_structure(intime, rst_file, gridspace=8):
     use_obs = [s.strip()[1:-1] for s in dartnml['obs_kind']['assimilate_these_obs_types'].split(',')]
     # I'm just testing this for now
     #use_obs = use_obs[0:2]
+    use_obs = ['LAND_SFC_PRESSURE']
     print(use_obs)
     # Put time as datetime
     intime = startdate + timedelta(seconds=intime)
@@ -61,10 +62,10 @@ def build_obs_structure(intime, rst_file, gridspace=8):
 
     # Now figure out how many obs we'll need
     gridspace *= 1000
-    obx = range(int(dx),int(nx*dx),gridspace)
-    oby = range(int(dx),int(ny*dx),gridspace)
-    obx = [16000]
-    oby = [16000]
+    obx = range(int(dx/2.),int(nx*dx),gridspace)
+    oby = range(int(dy/2.),int(ny*dx),gridspace)
+    #obx = [16000]
+    #oby = [16000]
     total_obs = len(obx)*len(oby)*len(use_obs)
     print("Total number of obs:", total_obs)
    
@@ -172,6 +173,10 @@ def generate_ideal_obs(intime):
 
     # Cleanup
     os.system('rm -f True_State.nc obs_seq.in obs_seq.out')
+    if not os.path.exists('cm1out_rst_000001.nc'):
+        os.system('ln -sf {:s} .'.format(os.path.join(truthdir, 'cm1out_rst_000001.nc')))
+    if not os.path.exists('namelist.input'):
+        os.system('cp {:s}/namelist.input .'.format(dir_dom))
     # Link in the executables we may need and run in order
     exe_sequence = ['create_obs_sequence','perfect_model_obs']
     for exe in exe_sequence:
@@ -193,7 +198,7 @@ def generate_ideal_obs(intime):
         raise ProceduralError("perfect_model_obs sequence failed! No obs_seq.out file.",'')
     else:
         print("Success!  Made obs_seq.out file.")
-
+        os.system('mv obs_seq.out {:d}_obs_seq.prior'.format(intime))
 
 
 

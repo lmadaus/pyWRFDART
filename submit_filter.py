@@ -16,12 +16,13 @@ desc = """
 import os
 import time
 from datetime import datetime, timedelta
-from WRF_dart_param import *
+from ens_dart_param import *
 from optparse import OptionParser
+from make_namelist_dart import write_namelist, set_namelist_sectors
 
 parser = OptionParser(description=desc)
 
-parser.add_option('-d','--datein',dest='datein',action='store',type='string',default=date_start,\
+parser.add_option('-d','--datein',dest='datein',action='store',type='string',default=cycle_len,\
                   help='Date of assimilation cycle (YYYYMMDDHH)')
 parser.add_option('-m','--mpi_procs',dest='mpi_procs',action='store',type='string',\
                   default=mpi_numprocs_filter, help='Number of processors to use for MPI run')
@@ -34,6 +35,8 @@ prevdate = datein - cycle_len
 datein *= 60
 prevdate *= 60
 mpi_numprocs_filter = int(opts.mpi_procs)
+# Get the namelist values
+nmld = set_namelist_sectors()
 
 # Change these values to only run certain sections of the code
 PRE_CLEAN       = True
@@ -58,15 +61,6 @@ def main():
         # Start by cleaning up the DART directoy,
         # Only removing old filter_ic_new files
         clean_dart(True, False)
- 
-
-    if PRE_CHECK and not flag_direct_netcdf_io:
-        # Now, check to be sure all filter_ic_old.#### files are in place
-        for r in range(1,Ne+1):
-            if not os.path.exists('filter_ic_old.%04d' % r):
-                error_handler('Could not find filter_ic_old.%04d. Exiting.' % r, 'submit_filter')
-
-    if RUN_FILTER:
         # We've got the files, so now copy in the observation file
         obfile = os.path.join(dir_obs, '{:d}_obs_seq.prior'.format(datein))
         if os.path.exists(obfile):   
@@ -80,17 +74,32 @@ def main():
         os.system('rm filter')
         os.system('ln -sf {:s} filter'.format(os.path.join(dir_src_dart,'filter')))
         
-        # Make sure wrfinput is linked in
-        #for dom in range(1,max_dom+1):
-        #    if not os.path.exists('./wrfinput_d{:02d}'.format(dom)):
-        #        os.system('ln -sf {:s}/wrfinput_d{:02d} .'.format(dir_wrf_dom, dom))
+        # Make sure template is linked in
+        if not os.path.exists('./cm1out_rst_000001.nc'):
+            os.system('cp {:s}/cm1out_rst_000001.nc .'.format(dir_dom))
+        if not os.path.exists('./namelist.input'):
+            os.system('cp {:s}/namelist.input .'.format(dir_dom))
 
         # Now write the submission script
-        qsub_cmd, scriptname = write_filter_submit(datein)
+        qsub_cmd, scriptname = write_filter_submit()
 
         # Using the script and command provided, submit the filter
         if os.path.exists('filter_done'):
             os.system('rm filter_done')
+ 
+
+    if PRE_CHECK and not flag_direct_netcdf_io:
+        # Now, check to be sure all filter_ic_old.#### files are in place
+        for r in range(1,Ne+1):
+            if not os.path.exists('filter_ic_old.%04d' % r):
+                error_handler('Could not find filter_ic_old.%04d. Exiting.' % r, 'submit_filter')
+    else:
+        with open('input_filelist.txt','w') as filelist:
+            for m in xrange(1,Ne+1):
+                filelist.write('{:s}/m{:d}/cm1out_rst_000001.nc\n'.format(dir_members, m))
+
+
+    if RUN_FILTER:
 
         # Setting times will let us see how long it is taking
         t_0 = time.time()
@@ -132,20 +141,20 @@ def make_namelist_and_inflate(datein, prevdate):
 
 
     # Start on the first actual assimilation time
-    curdate = start + (assim_dt * (assim_start-1))
+    curdate = start + (assim_dt * (assim_start))
     no_adaptive_inf_dates = []
     step = 1
     # WRF dart param tells us which assimilation step to start using inflation
 
     while step < inflate_start:
-        no_adaptive_inf_dates.append(curdate)
+        no_adaptive_inf_dates.append(curdate*60)
         curdate = curdate + assim_dt
-        step = step + 1 
-
+        step = step + 1
+    print(no_adaptive_inf_dates)
     # Now check to see if we are in the list of no inflation dates
     if datein not in no_adaptive_inf_dates: 
         print("Using adaptive inflation values from previous time")
-        os.system('./make_namelist_dart.py -d {:d} -i'.format(datein/60))
+        os.system('./make_namelist_dart.py -d {:d} -i'.format(int(datein/60)))
         prior_inf_file = os.path.join(dir_longsave, '{:d}_prior_inf_ic.gz'.format(prevdate))
         if os.path.exists(prior_inf_file):
             os.system('cp {:s} {:s}/prior_inf_ic_old.gz'.format(prior_inf_file, dir_assim))
@@ -181,6 +190,8 @@ def archive_files(datem):
     print("#################### ARCHIVING FILES #######################")
     # Run diagnostics on the posterior file
     os.system('ln -sf obs_seq.posterior obs_seq.diag')
+    # Write the namelist with the right names
+    nmld['obs_diag']['obs_sequence_name'] = 'obs_seq.diag'
     if not os.path.exists('obs_diag'):
         os.system('ln -sf {:s}/obs_diag .'.format(dir_src_dart))
     os.system('./obs_diag')
@@ -281,35 +292,35 @@ def write_filter_submit():
             os.system('rm run_filter_mpi.csh')
         # Write a new run_filter_mpi.csh
         with open('run_filter_mpi.csh','w') as outfile:
-            outfile.write("#!/bin/csh")
-            outfile.write("#==================================================================")
-            outfile.write("#BSUB -J run_filter")
-            outfile.write("#BSUB -o submit_filter.%J.log")
-            outfile.write("#BSUB -e submit_filter.%J.err")
-            outfile.write("#BSUB -P {:s}".format(NCAR_GAU_ACCOUNT))
-            outfile.write("#BSUB -W {:s}".format(ADVANCE_TIME_FILTER))
-            outfile.write("#BSUB -q {:s}".format(ADVANCE_QUEUE_FILTER))
-            outfile.write("#BSUB -n {:d}".format(ADVANCE_CORES_FILTER))
-            outfile.write("#BSUB -x")
-            outfile.write('#BSUB -R "span[ptile={:s}]"'.format(NCAR_ADVANCE_PTILE))
-            outfile.write("#==================================================================")
-            outfile.write("limit stacksize unlimited")
-            outfile.write("setenv OMP_STACKSIZE 200000000000")
-            outfile.write("setenv MP_STACK_SIZE 200000000000")
-            outfile.write("set start_time = `date +%s`")
-            outfile.write('echo "host is " `hostname`')
-            outfile.write("")
-            outfile.write("cd {:s}".format(dir_dom))
-            outfile.write("echo $start_time >& {:s}/filter_started".format(dir_dom))
-            outfile.write("")
-            outfile.write("#  run data assimilation system")
-            outfile.write("setenv TARGET_CPU_LIST -1")
-            outfile.write("mpirun.lsf job_memusage.exe ./filter")
-            outfile.write("")
-            outfile.write("touch {:s}/filter_done".format(dir_dom)
-            outfile.write("set end_time = `date  +%s`")
-            outfile.write("@ length_time = $end_time - $start_time")
-            outfile.write('echo "duration = $length_time"')
+            outfile.write("#!/bin/csh\n")
+            outfile.write("#==================================================================\n")
+            outfile.write("#BSUB -J run_filter\n")
+            outfile.write("#BSUB -o submit_filter.%J.log\n")
+            outfile.write("#BSUB -e submit_filter.%J.err\n")
+            outfile.write("#BSUB -P {:s}\n".format(NCAR_GAU_ACCOUNT))
+            outfile.write("#BSUB -W {:s}\n".format(ADVANCE_TIME_FILTER))
+            outfile.write("#BSUB -q {:s}\n".format(ADVANCE_QUEUE_FILTER))
+            outfile.write("#BSUB -n {:d}\n".format(ADVANCE_CORES_FILTER))
+            outfile.write("#BSUB -x\n")
+            outfile.write('#BSUB -R "span[ptile={:s}]"\n'.format(NCAR_ADVANCE_PTILE))
+            outfile.write("#==================================================================\n")
+            outfile.write("limit stacksize unlimited\n")
+            outfile.write("setenv OMP_STACKSIZE 200000000000\n")
+            outfile.write("setenv MP_STACK_SIZE 200000000000\n")
+            outfile.write("set start_time = `date +%s`\n")
+            outfile.write('echo "host is " `hostname`\n')
+            outfile.write("\n")
+            outfile.write("cd {:s}\n".format(dir_dom))
+            outfile.write("echo $start_time >& {:s}/filter_started\n".format(dir_dom))
+            outfile.write("\n")
+            outfile.write("#  run data assimilation system\n")
+            outfile.write("setenv TARGET_CPU_LIST -1\n")
+            outfile.write("mpirun.lsf job_memusage.exe ./filter\n")
+            outfile.write("\n")
+            outfile.write("touch {:s}/filter_done\n".format(dir_dom))
+            outfile.write("set end_time = `date  +%s`\n")
+            outfile.write("@ length_time = $end_time - $start_time\n")
+            outfile.write('echo "duration = $length_time"\n')
         return ('bsub < ','run_filter_mpi.csh')
 
     else:
@@ -317,14 +328,14 @@ def write_filter_submit():
         if os.path.exists('run_filter_mpi.py'):
             os.system('rm run_filter_mpi.py')
         with open('run_filter_mpi.py','w') as outfile:
-            outfile.write("#!/usr/bin/env python")
-            outfile.write("")
-            outfile.write("import os")
-            outfile.write("# Change to directory" )
+            outfile.write("#!/usr/bin/env python\n")
+            outfile.write("\n")
+            outfile.write("import os\n")
+            outfile.write("# Change to directory\n" )
             curdir = os.getcwd()
-            outfile.write("os.chdir('{:s}')".format(curdir))
-            outfile.write("os.system('{:s} -np {:d} filter >> filter.out')".format(mpi_run_command,mpi_numprocs_filter))
-            outfile.write("os.system('touch filter_done')")
+            outfile.write("os.chdir('{:s}')\n".format(curdir))
+            outfile.write("os.system('{:s} -np {:d} filter >> filter.out')\n".format(mpi_run_command,mpi_numprocs_filter))
+            outfile.write("os.system('touch filter_done')\n")
         return ('qsub -pe ompi {:d} -V -q {:s} -e {:s} -o {:s}'.format(mpi_numprocs_filter,queue_filter,dir_assim,dir_assim),\
                 'run_filter_mpi.py')
 

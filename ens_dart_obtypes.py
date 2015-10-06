@@ -20,52 +20,56 @@ use_obs_soundings = False
 
 rawin_sfc_pres      = (False, False) 
 rawin_sfc_altimeter = (False, False) 
-rawin_wind          = (False, True) 
-rawin_temp          = (False, True) 
-rawin_humidity      = (False, True) 
+rawin_wind          = (False, False) 
+rawin_temp          = (False, False) 
+rawin_humidity      = (False, False) 
 
 
 ### SURFACE OBS ###
 use_obs_surface = True
 
-sfc_altimeter    = (False, True) 
+sfc_altimeter    = (False, False) 
 sfc_alt_tendency = (False, False)
-sfc_verify_alt   = (False, True)
+sfc_verify_alt   = (False, False)
 sfc_pressure     = (False, False) 
-sfc_wind         = (False, True) 
-sfc_temp         = (False, True)
-sfc_humidity     = (False, True) 
-wunderground_alt = (False, True)
-wunderground_temp = (False, True)
+sfc_wind         = (False, False) 
+sfc_temp         = (False, False)
+sfc_humidity     = (False, False) 
+ideal_sfc_pressure = (True, False) 
+ideal_sfc_wind     = (True, False) 
+ideal_sfc_temp     = (True, False) 
+ideal_sfc_humidity = (True, False) 
+wunderground_alt = (False, False)
+wunderground_temp = (False, False)
 wunderground_wind = (False, False)
 wunderground_dewp = (False, False)
-phone_altimeter  = (True, False)
+phone_altimeter  = (False, False)
 
 
 
 ### Odd PACNW option ###
 use_obs_pacnw=False
 
-pacnw_wind      = (False, True) 
-pacnw_altimeter = (False, True)
-pacnw_temp      = (False, True) 
+pacnw_wind      = (False, False) 
+pacnw_altimeter = (False, False)
+pacnw_temp      = (False, False) 
 pacnw_humidity  = (False, False) 
 
 ### AIRCRAFT ###
 use_obs_aircraft = False 
 
-acars_wind     = (False, True) 
-acars_temp     = (False, True) 
-acars_humidity = (False, True) 
-tamdar_wind     = (False, True) 
-tamdar_temp     = (False, True) 
-tamdar_humidity = (False, True) 
+acars_wind     = (False, False) 
+acars_temp     = (False, False) 
+acars_humidity = (False, False) 
+tamdar_wind     = (False, False) 
+tamdar_temp     = (False, False) 
+tamdar_humidity = (False, False) 
 
 
 ### CLOUD-TOP WINDS ###
 use_obs_ctw = False 
 
-sat_ctw = (False, True)
+sat_ctw = (False, False)
 
 ### GPS REFRACTIVITY ###
 use_obs_gpsro = False 
@@ -79,7 +83,7 @@ use_nexrad_data = False
 radar_vad_winds          = (False, False)
 radar_reflectivity       = (False, False)
 radar_radial_velocity    = (False, False)
-radar_clear_reflectivity = (True, True)
+radar_clear_reflectivity = (False, False)
 radar_drop_fall_speed    = (False, False)
 
 
