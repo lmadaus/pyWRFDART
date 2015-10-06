@@ -10,9 +10,9 @@ parser = ArgumentParser()
 parser.add_argument('-d','--d',dest='starttime',type=int,default=0,
                   help='Start time of this cycle')
 parser.add_argument('-l','--length',action='store',dest='length',type=int,default=int(cycle_len),
-                  help='Override cycle_len: length of cycle in minutes')
+                  help='Override cycle_len: length of cycle in seconds')
 parser.add_argument('-m','--mems',nargs='+',action='store',dest='sub_mems',default=[],
-                  help='Only submit lited members')
+                  help='Only submit listed members')
 
 
 

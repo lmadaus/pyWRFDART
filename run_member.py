@@ -6,7 +6,7 @@ import re
 from netCDF4 import Dataset
 sys.path.append('/home/disk/pvort/nobackup/lmadaus/cm1/DOMAINS/kdvn_ensemble')
 from ens_dart_param import *
-
+from namelist_utils import read_namelist, write_namelist, write_dart_namelist
 
 """
 # New master script that will run all member-specific tasks on the queue
@@ -122,7 +122,7 @@ def get_assim_times():
 
         REQUIRES:
             In ens_dart_param:
-                exp_length, cycle_len, N_assim, assim_start, assim_interval
+                exp_length, cycle_len, assim_start, assim_interval
 
         RETURNS:
                 list of assimilation times"""
@@ -142,7 +142,7 @@ def get_assim_times():
     if assim_start < 0:
         cycle_times = []
     else:
-        cycle_times = cycle_times[assim_start:N_assim:assim_interval]
+        cycle_times = cycle_times[assim_start::assim_interval]
 
 
     # Return the list of assimilation times
@@ -193,7 +193,7 @@ def run_dart_to_cm1(mem,start):
                       'run_dart_to_wrf')
 
     # Write a new dart namelist for this time
-    nml_good = write_dart_namelist(mem,start)
+    nml_good = write_dart_namelist(mem)
     if not nml_good:
         error_handler('Trouble writing input.nml for member %d' % mem, 'run_dart_to_wrf')
 
@@ -248,25 +248,30 @@ def cm1_prep(mem,start,end,restart_name='cm1out_rst_000001.nc'):
         rstnc = Dataset(restart_name, 'r')
         time_sec = int(rstnc.variables['time'][0])
         rstnc.close()
-        if time_sec != start*60:
+        if time_sec != start:
             error_handler('restart file {:s} for member {:d} does not match current cycle time: {:d} min.'.format(restart_name, mem, start), 'cm1_prep')
     
-    # Get the files needed to set up namelist
-    if os.path.exists('namelist.input'):
-        os.system('rm namelist.input')
-    if not os.path.exists('write_cm1_namelist.py'):
-       os.system('ln -sf {:s}/write_cm1_namelist.py .'.format(dir_dom))
-    if not os.path.exists('ens_dart_param.py'):
-        os.system('ln -sf {:s}/ens_dart_param.py'.format(dir_dom))
 
     # Find out how long the run should be 
     dtime = int(end-start)
 
     # Write the namelist
+    if not os.path.exists('namelist.input'):
+        os.system('cp {:s}/namelist.input .'.format(dir_dom))
+    nmld = read_namelist('namelist.input')
     if start != 0:
-        os.system('./write_cm1_namelist.py -r {:s} -l {:d}'.format(restart_name, dtime))
+        irst = 1
+        nmld['param2']['irst'] = 1
+        nmld['param2']['rstnum'] = 1
+        nmld['param1']['run_time'] = dtime
+        nmld['param1']['rstfrq'] = cycle_len
+        write_namelist(nmld, 'namelist.input')
+        #os.system('./write_cm1_namelist.py -r {:s} -l {:d}'.format(restart_name, dtime))
     else:
-        os.system('./write_cm1_namelist.py -l {:d}'.format(dtime))
+        nmld['param1']['run_time'] = dtime
+        nmld['param1']['rstfrq'] = cycle_len
+        write_namelist(nmld, 'namelist.input')
+        #os.system('./write_cm1_namelist.py -l {:d}'.format(dtime))
     if not os.path.exists('namelist.input'):
         error_handler('Unable to find namelist.input','wrf_prep')
 
@@ -310,7 +315,7 @@ def post_model_cleanup(mem,start,end,fcst_end):
         # Check to be sure this is at the right time
         with Dataset(restart_name,'r') as rstfile:
             rst_time = rstfile.variables['time'][0]
-            if rst_time != end * 60:
+            if rst_time != end:
                 error_handler('Restart file {:s} not at correct time {:d} min. for member {:d}'.format(restart_name, int(end), mem),'post_model_cleanup')
 
     # Also check for out file
@@ -330,7 +335,7 @@ def post_model_cleanup(mem,start,end,fcst_end):
         if not os.path.exists('wrf_tendency'):
             os.system('ln -sf %s/wrf_tendency .' % dir_utils)
         # Write a new dart namelist for this time
-        nml_good = write_dart_namelist(mem,end)
+        nml_good = write_dart_namelist(mem)
         if not nml_good:
             error_handler('Trouble writing input.nml for member %d' % mem, 'post_model_cleanup')
 
@@ -395,7 +400,7 @@ def run_cm1_to_dart(mem,end):
                       'run_wrf_to_dart')   
 
     # Write a new dart namelist for this time
-    nml_good = write_dart_namelist(mem,end)
+    nml_good = write_dart_namelist(mem)
     if not nml_good:
         error_handler('Trouble writing input.nml for member %d' % mem, 'run_wrf_to_dart')
 
@@ -426,36 +431,6 @@ def run_cm1_to_dart(mem,end):
 
     # End of function run_wrf_to_dart
 
-
-def write_dart_namelist(mem,dtime):
-    """ Function that makes a new input.nml file in the current working directory 
-
-        RETURNS:
-            True if successful"""
- 
-    # Remove the old file if it exists
-    if os.path.exists('input.nml'):
-        os.system('rm input.nml')
-
-
-    # Link in the WRF_dart_param file
-    if not os.path.exists('ens_dart_param.py'):
-        os.system('ln -sf {:s}/ens_dart_param.py'.format(dir_dom))
-    if not os.path.exists('ens_dart_obtypes.py'):
-        os.system('ln -sf {:s}/ens_dart_obtypes.py'.format(dir_dom))
-    
-    # Link in make_namelist_dart
-    if not os.path.exists('make_namelist_dart.py'):
-        os.system('ln -sf {:s}/make_namelist_dart.py .'.format(dir_dom))
-
-    # Run make_namelist_dart
-    os.system('./make_namelist_dart.py -d %s' % dtime.strftime('%Y%m%d%H'))
-
-    # Check to be sure it was successful
-    if not os.path.exists('input.nml'):
-        return False
-    else:
-        return True
 
 
 if __name__ == '__main__':

@@ -3,8 +3,8 @@
 import os, sys, getopt
 # Get parameters from ens_dart_param and the default cm1 namelist
 from ens_dart_param import *
-from write_cm1_namelist import set_namelist_defaults
-cm1nml = set_namelist_defaults()
+from namelist_utils import read_namelist, write_namelist
+cm1nml = read_namelist(os.path.join(dir_dom, 'namelist.input'))
 
 """
 This is a quickly-reformatted version of the make_ensemble script
@@ -28,7 +28,7 @@ for o,a in opts:
 def main():
     DOMDIR = dir_dom
     os.chdir(DOMDIR)
-
+    """
     if os.path.isdir(DOMDIR+'/mems'):
         remove = raw_input('Remove contents of current ensemble directory (0 or 1)?')
         if remove:
@@ -37,7 +37,7 @@ def main():
             exit(1)
     else:
         os.system('mkdir mems')  
-
+    """
     print "############### MAKING ENSEMBLE ###############"
     print "############## NUMBER OF MEMS: %d #############" % Ne
     # Now populate the ensemble directory
@@ -64,7 +64,7 @@ def main():
         print "***** MEMBER {:d} *****".format(k)
         os.chdir(DOMDIR)
         # Run script to generate the namelist
-        os.system('./write_cm1_namelist.py')
+        write_namelist(cm1nml, 'namelist.input')
         # That will be written as namelist.input
         # hold onto that while making a directory for it
         os.chdir('{:s}/mems'.format(DOMDIR))

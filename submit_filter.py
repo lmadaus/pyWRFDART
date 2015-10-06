@@ -18,7 +18,7 @@ import time
 from datetime import datetime, timedelta
 from ens_dart_param import *
 from optparse import OptionParser
-from make_namelist_dart import write_namelist, set_namelist_sectors
+from namelist_utils import read_namelist, write_dart_namelist
 
 parser = OptionParser(description=desc)
 
@@ -32,11 +32,10 @@ parser.add_option('-m','--mpi_procs',dest='mpi_procs',action='store',type='strin
 #prevdate = datein - timedelta(minutes=int(fct_len))
 datein = int(opts.datein)
 prevdate = datein - cycle_len
-datein *= 60
-prevdate *= 60
 mpi_numprocs_filter = int(opts.mpi_procs)
 # Get the namelist values
-nmld = set_namelist_sectors()
+nmld = read_namelist('input.nml')
+cm1nmld = read_namelist('namelist.input')
 
 # Change these values to only run certain sections of the code
 PRE_CLEAN       = True
@@ -71,8 +70,8 @@ def main():
 
     
         # Make sure latest filter is linked in
-        os.system('rm filter')
-        os.system('ln -sf {:s} filter'.format(os.path.join(dir_src_dart,'filter')))
+        #os.system('rm -f filter')
+        #os.system('ln -sf {:s} filter'.format(os.path.join(dir_src_dart,'filter')))
         
         # Make sure template is linked in
         if not os.path.exists('./cm1out_rst_000001.nc'):
@@ -100,7 +99,7 @@ def main():
 
 
     if RUN_FILTER:
-
+        os.system('touch dart_log.out')
         # Setting times will let us see how long it is taking
         t_0 = time.time()
         os.system('{:s} {:s}'.format(qsub_cmd,scriptname))
@@ -147,41 +146,54 @@ def make_namelist_and_inflate(datein, prevdate):
     # WRF dart param tells us which assimilation step to start using inflation
 
     while step < inflate_start:
-        no_adaptive_inf_dates.append(curdate*60)
+        no_adaptive_inf_dates.append(curdate)
         curdate = curdate + assim_dt
         step = step + 1
     print(no_adaptive_inf_dates)
     # Now check to see if we are in the list of no inflation dates
     if datein not in no_adaptive_inf_dates: 
         print("Using adaptive inflation values from previous time")
-        os.system('./make_namelist_dart.py -d {:d} -i'.format(int(datein/60)))
-        prior_inf_file = os.path.join(dir_longsave, '{:d}_prior_inf_ic.gz'.format(prevdate))
-        if os.path.exists(prior_inf_file):
-            os.system('cp {:s} {:s}/prior_inf_ic_old.gz'.format(prior_inf_file, dir_assim))
-            os.system('gunzip prior_inf_ic_old.gz')
+        nmld['filter_nml']['inf_initial_from_restart'] = [True, True]
+        nmld['filter_nml']['inf_sd_initial_from_restart'] = [True, True]
+        prior_inf_mean = os.path.join(dir_longsave, '{:06d}_inf_ic_mean.nc'.format(prevdate))
+        prior_inf_sd = os.path.join(dir_longsave, '{:06d}_inf_ic_sd.nc'.format(prevdate))
+        if os.path.exists(prior_inf_mean):
+            os.system('cp {:s} {:s}/prior_inf_ic_old_mean.nc'.format(prior_inf_mean, dir_assim))
+            os.system('cp {:s} {:s}/prior_inf_ic_old_sd.nc'.format(prior_inf_sd, dir_assim))
         else:
             error_handler('Could not find {:s}'.format(prior_inf_file),'submit_filter') 
     else:
+        nmld['filter_nml']['inf_initial_from_restart'] = [False, False]
+        nmld['filter_nml']['inf_sd_initial_from_restart'] = [False, False]
         print("Using initial values for inflation mean and std")
-        os.system('./make_namelist_dart.py -d {:d}'.format(datein))
+    
+    # now figure out the "date" we are at based on the CM1 namelist
+    cm1date = cm1nmld['param11']
+    start_date = datetime(cm1date['year'], cm1date['month'], cm1date['day'], cm1date['hour'],\
+                          cm1date['minute'], cm1date['second'])
+   
+    # Make sure num members is write
+    nmld['filter_nml']['ens_size'] = Ne
+    write_dart_namelist(nmld, date=start_date + timedelta(seconds=datein))
     os.system('cp input.nml {:s}/input.nml'.format(dir_assim))
 
 
 def clean_dart(new_flag, old_flag):
-    os.system('rm Posterior_Diag.nc')
-    os.system('rm Prior_Diag.nc')
-    os.system('rm PriorDiag*')
-    os.system('rm mean_d01.nc')
-    os.system('rm sd_d01.nc')
-    os.system('rm *_forward_op_errors')
-    os.system('rm assim_model*')
-    os.system('rm *.out')
-    os.system('rm prior_inf_ic_old')
+    os.system('rm -f Posterior_Diag.nc')
+    os.system('rm -f Prior_Diag.nc')
+    os.system('rm -f PriorDiag*')
+    os.system('rm -f mean_d01.nc')
+    os.system('rm -f sd_d01.nc')
+    os.system('rm -f *_forward_op_errors')
+    os.system('rm -f assim_model*')
+    os.system('rm -f *.out')
+    os.system('rm -f prior_inf_ic_old')
+    os.system('rm -f prior_member*.nc')
     # If new flag is given, remove filter_ic_new.*
     if new_flag:
-        os.system('rm filter_ic_new.*')
+        os.system('rm -f filter_ic_new.*')
     if old_flag:
-        os.system('rm filter_ic_old.*')
+        os.system('rm -f filter_ic_old.*')
 
 
 
@@ -190,11 +202,9 @@ def archive_files(datem):
     print("#################### ARCHIVING FILES #######################")
     # Run diagnostics on the posterior file
     os.system('ln -sf obs_seq.posterior obs_seq.diag')
-    # Write the namelist with the right names
-    nmld['obs_diag']['obs_sequence_name'] = 'obs_seq.diag'
-    if not os.path.exists('obs_diag'):
-        os.system('ln -sf {:s}/obs_diag .'.format(dir_src_dart))
-    os.system('./obs_diag')
+    #if not os.path.exists('obs_diag'):
+    #    os.system('ln -sf {:s}/obs_diag .'.format(dir_src_dart))
+    os.system('{:s}/obs_diag'.format(dir_src_dart))
     if not os.path.exists('obs_diag_output.nc'):
         print("Failure to produce obs_diag_output.nc!")
         pass
@@ -203,9 +213,9 @@ def archive_files(datem):
     os.system('unlink obs_seq.diag')
 
     # Convert the posterior obs sequence file to netcdf format for easier diagnosis later
-    if not os.path.exists('obs_seq_to_netcdf'):
-        os.system('ln -sf {:s}/obs_seq_to_netcdf .'.format(dir_src_dart))
-    os.system('./obs_seq_to_netcdf')
+    #if not os.path.exists('obs_seq_to_netcdf'):
+    #    os.system('ln -sf {:s}/obs_seq_to_netcdf .'.format(dir_src_dart))
+    os.system('{:s}/obs_seq_to_netcdf'.format(dir_src_dart))
     if not os.path.exists('obs_epoch_001.nc'):
         print("Failure to produce obs_epoch_001.nc!")
         pass
@@ -218,40 +228,17 @@ def archive_files(datem):
     os.system('mv -f obs_seq.prior  {:s}/{:06d}_obs_seq.prior'.format(dir_longsave,datem))
     os.system('mv -f obs_seq.posterior {:s}/{:06d}_obs_seq.posterior'.format(dir_longsave,datem))
 
-    # Move the prior and posterior inflation files to longsave
-    """
-    if os.path.exists('prior_inf_ic_new'):
-        os.system('cp -f prior_inf_ic_new prior_inf_ic_old')
-        os.system('gzip -f prior_inf_ic_new')
-        os.system('mv -f prior_inf_ic_new.gz   %s/%s_prior_inf_ic.gz' % (dir_longsave, datem))
-    if os.path.exists('post_inf_ic_new'):
-        os.system('cp -f post_inf_ic_new   post_inf_ic_old')
-        os.system('gzip -f post_inf_ic_new')
-        os.system('mv -f post_inf_ic_new.gz   %s/%s_post_inf_ic.gz' % (dir_longsave, datem))
-
-    # Move the prior and posterior inflation diag files to longsave
-    if os.path.exists('prior_inf_diag'):
-        os.system('gzip -f prior_inf_diag')
-        os.system('mv -f prior_inf_diag.gz   %s/%s_prior_inf_diag.gz' % (dir_longsave, datem))
-    if os.path.exists('post_inf_diag'):
-        os.system('gzip -f post_inf_diag')
-        os.system('mv -f post_inf_diag.gz   %s/%s_post_inf_diag.gz' % (dir_longsave, datem))
-
-
-    # Move Prior and Posterior Diag files to longsave
-    os.system('mv -f Prior_Diag.nc  %s/%s_Prior_Diag.nc' % (dir_longsave, datem))
-    os.system('mv -f Posterior_Diag.nc %s/%s_Posterior_Diag.nc' % (dir_longsave, datem))
-    os.system('
-    """
     # LEM -- Revisions here for new diag format, with just the mean and sd
-    if os.path.exists('prior_inf_ic_new_mean_d01'):
-        os.system('mv -f prior_inf_ic_new_mean_d01 {:s}/{:06d}_prior_inf_ic_mean_d01'.format(dir_longsave,datem))
-        os.system('mv -f prior_inf_ic_new_sd_d01 {:s}/{:06d}_prior_inf_ic_sd_d01'.format(dir_longsave,datem))
-    if os.path.exists('mean_d01.nc') and os.path.exists('sd_d01.nc'):
-        os.system('ncdiff mean_d01.nc PriorDiag_mean_d01.nc mean_increment.nc')
-        os.system('ncdiff sd_d01.nc PriorDiag_sd_d01.nc sd_increment.nc')
+    if os.path.exists('prior_inf_ic_new_mean.nc'):
+        os.system('mv -f prior_inf_ic_new_mean.nc {:s}/{:06d}_inf_ic_mean.nc'.format(dir_longsave,datem))
+        os.system('mv -f prior_inf_ic_new_sd.nc {:s}/{:06d}_inf_ic_sd.nc'.format(dir_longsave,datem))
+    if os.path.exists('mean.nc') and os.path.exists('sd.nc'):
+        os.system('ncdiff mean.nc PriorDiag_mean.nc mean_increment.nc')
+        os.system('ncdiff sd.nc PriorDiag_sd.nc sd_increment.nc')
         os.system('mv -f mean_increment.nc {:s}/{:06d}_mean_increment.nc'.format(dir_longsave,datem))
         os.system('mv -f sd_increment.nc {:s}/{:06d}_sd_increment.nc'.format(dir_longsave,datem))
+        os.system('mv -f mean.nc {:s}/{:06d}_mean.nc'.format(dir_longsave,datem))
+        os.system('mv -f sd.nc {:s}/{:06d}_sd.nc'.format(dir_longsave,datem))
 
 
     # Check to see if we are compressing the Diag files
@@ -260,10 +247,10 @@ def archive_files(datem):
         curdir = os.getcwd()
         os.chdir(dir_longsave)
         #os.system('gzip -f %s_Prior_Diag.nc' % datem)
-        os.system('gzip -f {:06d}_Posterior_Diag.nc'.format(datem))
-        if os.path.exists('{:s}/{:06d}_Prior_Diag_int.nc'.format(dir_longsave, datem)):
-            os.system('gzip -f {:06d}_Prior_Diag_int.nc'.format(datem))
-            os.system('gzip -f {:06d}_Posterior_Diag_int.nc'.format(datem))
+        os.system('gzip -f {:06d}_mean.nc'.format(datem))
+        os.system('gzip -f {:06d}_sd.nc'.format(datem))
+        os.system('gzip -f {:06d}_mean_increment.nc'.format(datem))
+        os.system('gzip -f {:06d}_sd_increment.nc'.format(datem))
         os.chdir(curdir)
 
 
@@ -278,7 +265,7 @@ def write_filter_submit():
 
     if mpi_numprocs_filter == 1:
          # We're not requesting an mpirun, return just the filter command 
-         return ('./filter','')
+         return ('{:s}/filter'.format(dir_src_dart),'')
     
     node_name = os.uname()[1]
 
@@ -334,7 +321,7 @@ def write_filter_submit():
             outfile.write("# Change to directory\n" )
             curdir = os.getcwd()
             outfile.write("os.chdir('{:s}')\n".format(curdir))
-            outfile.write("os.system('{:s} -np {:d} filter >> filter.out')\n".format(mpi_run_command,mpi_numprocs_filter))
+            outfile.write("os.system('{:s} -np {:d} {:s}/filter >> filter.out')\n".format(mpi_run_command,mpi_numprocs_filter, dir_src_dart))
             outfile.write("os.system('touch filter_done')\n")
         return ('qsub -pe ompi {:d} -V -q {:s} -e {:s} -o {:s}'.format(mpi_numprocs_filter,queue_filter,dir_assim,dir_assim),\
                 'run_filter_mpi.py')

@@ -19,7 +19,7 @@ for o,a in opts:
       silent = True
 
 # Convert indate to seconds
-indate = int(indate) * 60
+indate = int(indate)
 # Stat with several functions
 
 
@@ -101,6 +101,7 @@ def chkstat(chkdate):
             # If we're here, then the member is not in the queue.  Check for wrfout
             rstfile = '{:s}/m{:d}/cm1out_rst_000001.nc'.format(dir_members,mem)
             if not os.path.exists(rstfile) and mem not in memserror:
+                print("Restart file not found")
                 # Member is not in the queue, so there must be a failure.
                 error_found = check_logfile(mem)
                 if not error_found:
@@ -117,6 +118,7 @@ def chkstat(chkdate):
                 if (rst_time != chktime):
                     # Because we're in this part of the if statement, we know
                     # the member is not running or waiting
+                    print("Restart time:", rst_time, "Does not match check time:", chktime)
                     error_found = check_logfile(mem)
                     if not error_found:
                         # Not sure why this member is missing, but add it to error anyway

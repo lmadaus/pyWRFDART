@@ -26,17 +26,18 @@ def main():
     #build_obs_structure(0)
 
     if GENERATE_IDEAL_OBS:
-        generate_ideal_obs(intime=60)
+        generate_ideal_obs(intime=120)
 
-def build_obs_structure(intime, rst_file, gridspace=1):
+def build_obs_structure(intime, rst_file, gridspace=16):
     """ Function to specify what variables we want and how dense they should be """
-    from make_namelist_dart import set_namelist_sectors, write_namelist
-    from write_cm1_namelist import set_namelist_defaults
+    #from make_namelist_dart import set_namelist_sectors, write_namelist
+    #from write_cm1_namelist import set_namelist_defaults
+    from namelist_utils import read_namelist, write_dart_namelist
 
     # Generate the DART namelist structure so we
     # can query (and modify) it
-    dartnml = set_namelist_sectors()
-    cm1nml = set_namelist_defaults()
+    dartnml = read_namelist('input.nml')
+    cm1nml = read_namelist('namelist.input')
     # Build the epoch from the cm1 namelist
     param11 = cm1nml['param11']
     startdate = datetime(param11['year'], param11['month'],\
@@ -44,7 +45,7 @@ def build_obs_structure(intime, rst_file, gridspace=1):
                      param11['minute'], param11['second'])
     
     # Parse out the observations to assimilate
-    use_obs = [s.strip()[1:-1] for s in dartnml['obs_kind']['assimilate_these_obs_types'].split(',')]
+    use_obs = dartnml['obs_kind_nml']['assimilate_these_obs_types']
     # I'm just testing this for now
     #use_obs = use_obs[0:2]
     use_obs = ['LAND_SFC_PRESSURE']
@@ -71,21 +72,20 @@ def build_obs_structure(intime, rst_file, gridspace=1):
    
     # Write a new dart namelist for the current time
     delt = intime - epoch
-    #dartnml['perfect_model_obs']['first_obs_days'] = str(delt.days)
-    #dartnml['perfect_model_obs']['first_obs_seconds'] = str(delt.seconds)
-    #dartnml['perfect_model_obs']['last_obs_days'] = str(delt.days)
-    #dartnml['perfect_model_obs']['last_obs_seconds'] = str(delt.seconds)
-    #dartnml['perfect_model_obs']['init_time_days'] = str(delt.days)
-    #dartnml['perfect_model_obs']['init_time_seconds'] = str(delt.seconds)
-    dartnml['perfect_model_obs']['obs_seq_in_file_name'] = "'obs_seq.in'"
-    dartnml['perfect_model_obs']['restart_in_file_name'] = \
-        "'{:s}'".format(rst_file)
+    #dartnml['perfect_model_obs_nml']['first_obs_days'] = str(delt.days)
+    #dartnml['perfect_model_obs_nml']['first_obs_seconds'] = str(delt.seconds)
+    #dartnml['perfect_model_obs_nml']['last_obs_days'] = str(delt.days)
+    #dartnml['perfect_model_obs_nml']['last_obs_seconds'] = str(delt.seconds)
+    #dartnml['perfect_model_obs_nml']['init_time_days'] = str(delt.days)
+    #dartnml['perfect_model_obs_nml']['init_time_seconds'] = str(delt.seconds)
+    dartnml['perfect_model_obs_nml']['obs_seq_in_file_name'] = 'obs_seq.in'
+    dartnml['perfect_model_obs_nml']['restart_in_file_name'] = rst_file
 
     # Make sure we have the right io pattern
-    dartnml['io_filenames']['restart_in_stub'] = "'notinuse'"
-    dartnml['io_filenames']['overwrite_input'] = ".false."
-    dartnml['io_filenames']['rpointer'] = ".true."
-    dartnml['io_filenames']['rpointer_file'] = "'input_filelist.txt'"
+    dartnml['io_filenames_nml']['restart_in_stub'] = 'notinuse'
+    dartnml['io_filenames_nml']['overwrite_input'] = False
+    dartnml['io_filenames_nml']['rpointer'] = True
+    dartnml['io_filenames_nml']['rpointer_file'] = 'input_filelist.txt'
 
     # Write the pointer file
     with open('input_filelist.txt', 'w') as pointerfile:
@@ -93,7 +93,7 @@ def build_obs_structure(intime, rst_file, gridspace=1):
     os.system('mv input_filelist.txt {:s}/'.format(dir_obs))
 
     # Write the modified namelist
-    write_namelist(dartnml)
+    write_dart_namelist(dartnml)
 
     # Set up the input file
     with open('obs_seq_input.txt','w') as infile:
