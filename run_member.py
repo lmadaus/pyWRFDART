@@ -3,9 +3,9 @@
 import os, sys
 from datetime import datetime, timedelta
 import re
-sys.path.append('/home/disk/pvort/nobackup/lmadaus/WRF/DOMAINS/ens_july27')
+sys.path.append('/glade/p/work/lmadaus/DOMAINS/ncar_ensemble')
 from WRF_dart_param import *
-
+from namelist_utils import read_namelist, write_namelist
 
 """
 # New master script that will run all member-specific tasks on the queue
@@ -42,14 +42,14 @@ def main():
 
     # Get assimilation times so we know if this is starting post-assimilation,
     # running to an assimilation, or none of the above
-    print "Getting assim times"
+    print("Getting assim times")
     assim_times = get_assim_times()
-    print "ASSIM TIMES:",assim_times
+    print("ASSIM TIMES:",assim_times)
 
     # Get the relevant information for this member
-    print "Getting model info"
+    print("Getting model info")
     memnum, startdate, enddate = get_basic_info() 
-    print "STARTDATE:", startdate
+    print("STARTDATE:", startdate)
 
     # Check here if the flag_direct_netcdf_io is True.  If so, set the
     # DART_TO_WRF and WRF_TO_DART sequences to False
@@ -59,7 +59,7 @@ def main():
 
     # Check to see if we need to run dart_to_wrf
     if DART_TO_WRF:
-        print "Checking for dart_to_wrf"
+        print("Checking for dart_to_wrf")
         if startdate in assim_times:
             run_dart_to_wrf(memnum, startdate)
 
@@ -67,34 +67,34 @@ def main():
     # And do a final check of things
     if flag_pert_bcs:
         if PROCESS_BCS:
-            print "Perturbing boundary conditions"
+            print("Perturbing boundary conditions")
             perturb_bcs(memnum, startdate, enddate)
         if RUN_WRF:
-            print "Prepping for WRF"
+            print("Prepping for WRF")
             wrf_prep(memnum, startdate, enddate)
-            print "Updating boundary conditions"
+            print("Updating boundary conditions")
             update_bcs(memnum,startdate)
     else:
         if PROCESS_BCS:
-            print "Prepping for WRF"
+            print("Prepping for WRF")
             os.system('cp %s/archive_bdy/%s_wrfbdy_d01 wrfbdy_d01' % (dir_wrf_dom,startdate.strftime('%Y%m%d%H')))
             wrf_prep(memnum, startdate, enddate)
-            print "Updating boundary conditions"
+            print("Updating boundary conditions")
             update_bcs(memnum,startdate)
    
     # Run WRF
     if RUN_WRF:
-        print "Running WRF"
+        print("Running WRF")
         run_wrf(memnum)
 
     # Do post-WRF cleanup
     if POST_WRF:
-        print "Doing post-WRF cleanup"
+        print("Doing post-WRF cleanup")
         post_wrf_cleanup(memnum,startdate,enddate)
 
     # If we end at an assimilation time, run wrf_to_dart
     if WRF_TO_DART:
-        print "Checking for wrf_to_dart"
+        print("Checking for wrf_to_dart")
         if enddate in assim_times:
             run_wrf_to_dart(memnum, enddate)
 
@@ -116,8 +116,8 @@ def preclean():
 
 def error_handler(error_msg, error_function):
     # Function to handle what to do with error messages
-    print "!!!!!! ERROR in function: %s !!!!!!" % error_function
-    print error_msg
+    print("!!!!!! ERROR in function: %s !!!!!!" % error_function)
+    print(error_msg)
     exit(1)
 
 
@@ -198,63 +198,6 @@ def get_basic_info():
     return mem, startdt, enddt
 
 
-
-def run_dart_to_wrf(mem,start):
-    """ If starting post-DART, run dart_to_wrf to populate the
-     wrfinput file. """
-
-    # Refresh with new WRF_dart_param variables
-    #from WRF_dart_param import *
-    print "Running dart_to_wrf"
-
-    # We know the member number, so mv the new dart state vector
-    # for that member number into the working directory
-    if os.path.exists('%s/wrfdart/filter_ic_new.%04d' % (dir_wrf_dom, mem)):
-        os.system('cp %s/wrfdart/filter_ic_new.%04d dart_wrf_vector' % (dir_wrf_dom, mem))
-    else:
-        error_handler('Could not find update ic file wrfdart/filter_ic_new.%04d' % mem, \
-                      'run_dart_to_wrf')
-
-    # Write a new dart namelist for this time
-    nml_good = write_dart_namelist(mem,start)
-    if not nml_good:
-        error_handler('Trouble writing input.nml for member %d' % mem, 'run_dart_to_wrf')
-
-    # Loop through each domain to be sure that wrfinput files are present
-    for dn in range(max_dom+1)[1:]:
-        os.system('cp %s/archive_bdy/%s_wrfinput_d01 wrfinput_d01' % (dir_wrf_dom,start.strftime('%Y%m%d%H')))
-        if not os.path.exists('wrfinput_d%02d' % dn):
-            error_handler('Could not find wrfinput_d%02d for mem %d' % (dn,mem), \
-                          'run_dart_to_wrf')
-
-    # Link in the dart_to_wrf executable
-    os.system('ln -sf %s/dart_to_wrf .' % dir_src_dart)
-
-    # Run the executable for the current member
-    if os.path.exists('dtw.out'):
-        os.system('rm dtw.out')
-    os.system('./dart_to_wrf >> dtw.out')
-
-    # Check for errors in the dart_to_wrf_sequence
-    darterror = False
-    logfile = open('dtw.out','r')
-    for line in logfile:
-        if re.search('error',str(line)):
-            darterror = True
-
-    # Error out if errors found
-    if darterror:
-        error_handler('Error creating wrfinput files from filter_ic_new.%04d' % (mem), \
-                      'run_dart_to_wrf')
-    else:
-        # If no errors, just clean up the directory
-        os.system('rm -f dart_wrf_vector')
-        os.system('rm -f dart_to_wrf')
-        os.system('rm input.nml')
-
-    # End of routine
-
-
 def perturb_bcs(mem,start,end):
     """ Function to run the BC perturbation sequence.  Uses fixed-covariance
         perturbations through the WRF-VAR framework.  Requires a met_em.d01 file
@@ -262,7 +205,7 @@ def perturb_bcs(mem,start,end):
         for the perturbation to work.  The actual re-compuation of the boundary
         conditions uses the program pert_wrf_bcs from DART"""
   
-    print "Starting to perturb boundary conditions"
+    print("Starting to perturb boundary conditions")
 
     # Go ahead and format times here for simplicity
     datem = start.strftime('%Y%m%d%H')
@@ -279,10 +222,11 @@ def perturb_bcs(mem,start,end):
     #os.system('cp %s/met_em.d01.%s.nc .' % (dir_wrf_dom, end.strftime('%Y-%m-%d_%H:%M:%S')))
 
     # Write the namelist and use real.exe to convert met_em file to wrfinput file
-    if not os.path.exists('write_namelists.py'):
-       os.system('ln -sf %s/write_namelists.py .' % dir_wrf_dom)
-    os.system('./write_namelists.py -d %s -l 0 -p -f' % datef)
-    #print "Running real.exe for BC end time"
+    #if not os.path.exists('write_namelists.py'):
+    #   os.system('ln -sf %s/write_namelists.py .' % dir_wrf_dom)
+    #os.system('./write_namelists.py -d %s -l 0 -p -f' % datef)
+    nmld = read_namelist('namelist.input')
+    #print("Running real.exe for BC end time")
     #os.system('ln -sf %s/real.exe real.exe' % dir_src_wrf)
     #os.system('%s %s ./real.exe' % (mpi_run_command, mpi_numprocs_flag))
     #os.system('rm real.exe')
@@ -299,10 +243,10 @@ def perturb_bcs(mem,start,end):
 
     bcint_hours = int(dlbc/60)
     #os.system('./write_namelists.py -d %s -e %d -l %d -f -p' % (datef,mem,bcint_hours))
-    os.system('./write_namelists.py -d %s -e %d -l %d -f -p' % (datef,mem,0))
+    #os.system('./write_namelists.py -d %s -e %d -l %d -f -p' % (datef,mem,0))
     os.system('ln -sf %s/build/da_wrfvar.exe da_wrfvar.exe' % dir_src_wrfvar)
     os.system('ln -sf %s/run/be.dat.cv3 be.dat' % dir_src_wrfvar)
-    print "Running da_wrfvar.exe"
+    print("Running da_wrfvar.exe")
     os.system('%s %s ./da_wrfvar.exe' % (mpi_run_command, mpi_numprocs_flag))
     if not os.path.exists('wrfvar_output'):
         error_handler('Could not find wrfvar_output file.  da_wrfvar.exe failed.',
@@ -318,7 +262,7 @@ def perturb_bcs(mem,start,end):
     os.system('ln -sf wrfinput_d01_%s wrfinput_next' % datef)
 
     # Run pert_wrf_bc
-    print "Running pert_wrf_bc"
+    print("Running pert_wrf_bc")
     os.system('ln -sf %s/pert_wrf_bc pert_wrf_bc' % dir_src_dart)
     os.system('./pert_wrf_bc')
     os.system('rm pert_wrf_bc')
@@ -353,7 +297,7 @@ def update_bcs(mem,start):
 
     # Since we already passed wrf_prep, we know the namelist.input is of the right time.
     # All we have to do is run the utility.
-    print "Updating WRF BCS"
+    print("Updating WRF BCS")
     os.system('./update_wrf_bc >> uwb.out')
 
     # Check for errors in the update_wrf_bc sequence
@@ -379,37 +323,22 @@ def wrf_prep(mem,start,end):
         sure files are in order 
 
     """
-
-    for dn in range(max_dom+1)[1:]:
-        # Use ncdump to get the time from the wrfinput_d?? file
-        ncout = os.popen('ncdump -v Times wrfinput_d%02d' % dn)
-        timeline = ncout.readlines()[-2]
-        wrfin_timestring = re.search('"(\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2})"',timeline).groups()[0]
-        wrfin_time = datetime.strptime(wrfin_timestring,'%Y-%m-%d_%H:%M:%S')
-        #print "timeline:", timeline
-        #print wrfin_time
-        #print start
-        # Make sure the wrfinput file is at the right time
+    from netCDF4 import Dataset
+    for dn in range(1, max_dom+1):
+        # Open the wrfinput file and be sure that the start time is right
+        with Dataset('wrfinput_d{:02d}'.format(dn), 'r') as wrfin:
+            filetime = wrfin.variables['Times'][0]
+        timestr = ''.join([x.decode('utf-8') for x in list(filetime)]).strip() 
+        wrfin_time = datetime.strptime(timestr, '%Y-%m-%d_%H:%M:%S')
         if wrfin_time != start:
-            error_handler('wrfinput_d%02d time (%s) does not match start time (%s) for mem %d' \
-                      % (dn,wrfin_time.strftime('%Y%m%d%H'), start.strftime('%Y%m%d%H'), mem), 'wrf_prep')
-
-    # Get the files needed to set up namelists
-    if os.path.exists('namelist.input'):
-        os.system('rm namelist.input')
-    if not os.path.exists('write_namelists.py'):
-       os.system('ln -sf %s/write_namelists.py .' % dir_wrf_dom)
-    if not os.path.exists('WRF_dart_param.py'):
-        os.system('ln -sf %s/wrfdart/WRF_dart_param.py' % (dir_wrf_dom))
-
-    # Find out how long the run should be 
-    dtime = end - start
-    dtime_hours = int(dtime.days * 24 + dtime.seconds / 3600)
-
+            error_handler('wrfinput_d{:02d} time ({:%Y%m%d%H}) does not match start time ({:%Y%m%d%H}) for mem {:d}'.format(dn,wrfin_time, start, mem), 'wrf_prep')
 
 
     # Write the namelist
-    os.system('./write_namelists.py -d %s -l %d -p -e %d' % (start.strftime('%Y%m%d%H'),dtime_hours, mem))
+    nmld = read_namelist('namelist.input')
+    nmld = update_wrf_time(nmld, start, end)
+    write_namelist(nmld, 'namelist.input')
+    #os.system('./write_namelists.py -d %s -l %d -p -e %d' % (start.strftime('%Y%m%d%H'),dtime_hours, mem))
     if not os.path.exists('namelist.input'):
         error_handler('Unable to find namelist.input','wrf_prep')
 
@@ -435,7 +364,7 @@ def run_wrf(mem):
 def post_wrf_cleanup(mem,start,end):
     """ Function to move wrfout files to appropriate places, handle
     calculating tendency if desired and process auxilliary outputs """
-    print "Beginning post-wrf cleanup"
+    print("Beginning post-wrf cleanup")
 
     # First, verify that WRF finished correctly
     for dn in range(int(max_dom)+1)[1:]:
@@ -443,7 +372,7 @@ def post_wrf_cleanup(mem,start,end):
             error_handler('File wrfout_d%02d_%s not found for member %d' \
                          % (dn,end.strftime('%Y-%m-%d_%H:%M:%S'),mem), 'post_wrf_cleanup')
 
-    print "Wrfout file found at endtime.  Success!"    
+    print("Wrfout file found at endtime.  Success!"    )
     # Check the rsl.error files to be doubly sure
     # INSERT CODE HERE
 
@@ -451,7 +380,7 @@ def post_wrf_cleanup(mem,start,end):
 
     # Check if we're computing tendency
     if flag_compute_tendency:
-        print "Computing altimeter tendency"
+        print("Computing altimeter tendency")
         if not os.path.exists('wrf_tendency'):
             os.system('ln -sf %s/wrf_tendency .' % dir_utils)
         # Write a new dart namelist for this time
@@ -481,7 +410,7 @@ def post_wrf_cleanup(mem,start,end):
     # Look for Ryan Torn's pressure tendency output and process it
     for dn in range(int(max_dom)+1)[1:]:
         if os.path.exists('psfc_data_d%02d.nc' % (dn)):
-           print "Processing psfc_data for domain", dn
+           print("Processing psfc_data for domain", dn)
            if not os.path.exists('input.nml'):
                nml_good = write_dart_namelist(mem,end)
                if not nml_good:
@@ -493,7 +422,7 @@ def post_wrf_cleanup(mem,start,end):
            os.system('rm wrfout.nc')
 
     # Actual file turnaround goes here
-    print "Copying over wrfout to wrfinput for restart."
+    print("Copying over wrfout to wrfinput for restart.")
     for dn in range(int(max_dom)+1)[1:]:
         # Save the previous wrfinput file in case something goes wrong
         os.system('cp wrfinput_d%02d prev_wrfinput_d%02d' % (dn,dn))
@@ -503,7 +432,7 @@ def post_wrf_cleanup(mem,start,end):
     # Check to see if we keep the wrfout files
     wrfout_fmt = end.strftime('%Y-%m-%d_%H:%M:%S')
     if not flag_keep_wrfouts:
-        print "Removing old wrfout files."
+        print("Removing old wrfout files.")
         filelist = os.listdir('%s/m%d' % (dir_members,mem))
         # Get wrfout files
         wrfouts = [f for f in filelist if f.startswith('wrfout_d')]
@@ -512,15 +441,15 @@ def post_wrf_cleanup(mem,start,end):
             wrfouts.remove('wrfout_d0%(dom)d_%(wrfout_fmt)s' % locals())
             wrfouts.remove('wrfout_d%02d_%s' % (dom,start.strftime('%Y-%m-%d_%H:%M:%S')))
         # Now remove what's left
-        #print "To remove...:"
-        #print wrfouts
+        #print("To remove...:")
+        #print(wrfouts)
         #raw_input()
         for file in wrfouts:
             os.system('rm %s/m%d/%s' % (dir_members,mem,file))
         # For now...
-        #print "Remaining contents of directory:"
+        #print("Remaining contents of directory:")
         #dirlist = os.listdir('%s/m%d' % (dir_members,mem))
-        #print dirlist
+        #print(dirlist)
         #raw_input()
 
 
@@ -531,7 +460,7 @@ def post_wrf_cleanup(mem,start,end):
 
 def run_wrf_to_dart(mem,end):
     """ Run wrf_to_dart to prepare for assimilation"""
-    print "Beginning wrf_to_dart."
+    print("Beginning wrf_to_dart.")
     # Check to be sure that the date in wrfinput_d01 matches the end time
     for dn in range(max_dom+1)[1:]:
         # Use ncdump to get the time from the wrfinput_d?? file

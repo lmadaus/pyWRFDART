@@ -32,7 +32,7 @@ def run_wps_sequence(ldate,fcst_len):
 
     # Run linkgrib
     os.system('./link_grib.csh gfs_')
-    print "Ungribbing..."
+    print("Ungribbing...")
     # Run ungrib
     os.system('./ungrib.exe')
     # Run metgrid
@@ -41,14 +41,15 @@ def run_wps_sequence(ldate,fcst_len):
     os.system('./run_real.py')
 
     # Wait for wrfbdy to exist
-    print "Waiting for real.exe to finish."
+    print("Waiting for real.exe to finish.")
+
     while not os.path.exists('wrfbdy_d01'):
         time.sleep(5)
 
     # Wait a second to be sure the file is done
     time.sleep(5)
     # Copy the bc file to each directory
-    print "Copying BC files..."
+    print("Copying BC files...")
     for mem in range(1,Ne+1):
         os.system('cp wrfbdy_d01 mems/m%d/wrfbdy_d01' % mem)
 
@@ -78,31 +79,31 @@ while curdate <= enddate:
     all_datelist.append(datetime.strftime(curdate,'%Y%m%d%H'))
     curdate = curdate + deltatime
 
-#print datelist
+#print(datelist)
 
 # Find out which are assimilation times
 assim_times = all_datelist[assim_start:N_assim]
 
-#print "Assim times correct?", assim_times
+#print("Assim times correct?", assim_times)
 #raw_input()
-#print "Run_datelist", run_datelist
+#print("Run_datelist", run_datelist)
 
 # Turn on the control lock
 if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom):                           
     os.system('touch %s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom)                                            
 else:                                                                                     
-    print "Found file 'AUTO_RUN_IN_PROGRESS' in main dir."                                
-    print "Don't want to start a duplicate auto run."                                     
-    print "Exiting."                                                                      
+    print("Found file 'AUTO_RUN_IN_PROGRESS' in main dir.")
+    print("Don't want to start a duplicate auto run.")
+    print("Exiting.")
     exit(1)             
 for date in run_datelist:
 
-    print "Auto-running in silent mode building to date", date
+    print("Auto-running in silent mode building to date", date)
     os.system('./check_ensemble_status.py -d %s -s' % date)
     # Master control lock -- check to see if this file exists                              
     # If it doesn't exist, exit the program                                                
     if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom):                        
-        print "File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting."          
+        print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting.") 
         exit(0)         
     if date in assim_times:
         #os.chdir('%s/wrfdart' % dir_wrf_dom)

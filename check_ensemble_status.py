@@ -46,13 +46,13 @@ def chkstat(chkdate):
    # Parse the queue output to see what's running
    if os.uname()[0] == 'AIX' or os.uname()[1].startswith('yslog'):
        qstat_out = os.popen('bjobs').readlines()
-       #print qstat_out
+       #print(qstat_out)
        #raw_input()
        queue_members = {} 
        for line in qstat_out:
            if re.search('member_(\d{1,3})',line):
                linesp = line.split()
-               #print line,linesp[6]
+               #print(line,linesp[6])
                # Job name could be in position 5 or 6
                try:
                    memnum = int(re.search('member_(\d{1,3})',linesp[6]).groups()[0])
@@ -70,7 +70,7 @@ def chkstat(chkdate):
    else:
        # On enkf
        qstat_out = os.popen('qstat').readlines()
-       #print qstat_out
+       #print(qstat_out)
        queue_members = {} 
        for line in qstat_out:
            if re.search('m(\d{1,3})_run_',line):
@@ -104,7 +104,7 @@ def chkstat(chkdate):
                  error_found = check_logfile(mem)
                  if not error_found:
                      # Not sure why this member is missing, but add it to error anyway
-                     print "Member %d Dom %d Model crashed.  Unknown reason." % (mem,dom)
+                     print("Member %d Dom %d Model crashed.  Unknown reason." % (mem,dom))
                      memserror.append(mem)      
 
              # If we're here, then wrfout file exists at the valid time. Check for the
@@ -112,7 +112,7 @@ def chkstat(chkdate):
              if not os.path.exists('%s/wrfdart/filter_ic_old.%04d' % (dir_wrf_dom,mem))\
                     and mem not in memserror:
                  # Something went wrong on WTD.  Only can proceed if this file exists
-                 print "Member %d Dom %d Error in POST-WRF or WRF-TO-DART" % (mem,dom)
+                 print("Member %d Dom %d Error in POST-WRF or WRF-TO-DART" % (mem,dom))
                  memserror.append(mem)
              # If we're here, the member is no longer in the queue, and both wrfout
              # and filter_ic_old files exists for the correct time.  This member is done. 
@@ -139,24 +139,24 @@ def check_logfile(memnum):
         # and what they mean.  If an error message
         # is found, add the model to the errored members list
         if re.search('used in new version', line) or re.search('cfl', line):
-            print "Member %d Dom %d : Probable CFL Error" % (ie,dom)
-            print "     %s" % line
+            print("Member %d Dom %d : Probable CFL Error" % (ie,dom))
+            print("     %s" % line)
             error = 1
         if re.search('forrtl: error', line):
-            print "Member %d Dom %d: Model crashed, unknown reason." % (ie, dom)
-            print "     %s" % line
+            print("Member %d Dom %d: Model crashed, unknown reason." % (ie, dom))
+            print("     %s" % line)
             error = 1
         if re.search('recursive I/O operation', line):
-            print "Member %d Dom %d: WRF I/O crashed, unknown reason." % (ie,dom)
-            print "     %s" % line  
+            print("Member %d Dom %d: WRF I/O crashed, unknown reason." % (ie,dom))
+            print("     %s" % line  )
             error = 1
         if re.search('Segmentation Fault', line) or re.search('segmentation fault', line):
-            print "Member %d Dom %d: Memory error (seg fault)" % (ie,dom)
-            print "     %s" % line
+            print("Member %d Dom %d: Memory error (seg fault)" % (ie,dom))
+            print("     %s" % line)
             error = 1
         if re.search('WOULD GO OFF TOP', line):
-            print "Member %d Dom %d: CFL error with convective scheme" % (ie,dom)
-            print "     %s" % line
+            print("Member %d Dom %d: CFL error with convective scheme" % (ie,dom))
+            print("     %s" % line)
             error = 1
     return error
 
@@ -177,18 +177,18 @@ def check_complete_wrf(datestr):
         nonan = False     
     except:
         # May not have this library on some machines
-        print "netCDF4 library not found. skipping Nancheck"
+        print("netCDF4 library not found. skipping Nancheck")
         nonan = True
     from datetime import datetime
     try:
         import numpy as np
     except:
-        print "Numpy not found.  Skipping."
+        print("Numpy not found.  Skipping.")
     # Set the date time
     try:
         indate = datetime.strptime(datestr,'%Y%m%d%H')
     except:
-        print "Unrecognized date/time: ", datestr
+        print("Unrecognized date/time: ", datestr)
         exit(1)
 
 
@@ -207,12 +207,12 @@ def check_complete_wrf(datestr):
                # Open the dataset if it exists
                ncfile = Dataset('%s/m%d/wrfout_d01_%s' % (dir_members,mem,wrftime))
            except:
-               print "Wrfout file at time %s doesn't seem to exist for member %d!" % (wrftime, mem)
+               print("Wrfout file at time %s doesn't seem to exist for member %d!" % (wrftime, mem))
                exit(1)
            T2 = ncfile.variables['T2'][:,:]
            # Search for nan-ed members
            if True in np.isnan(T2):
-               print "Found NAN in member %d" % mem
+               print("Found NAN in member %d" % mem)
                nan_members.append(mem)
     return nan_members
 
@@ -222,7 +222,7 @@ def check_complete_wrf(datestr):
 def resubmit(merror):
    # Quick function to resubmit all crashed members
    for mem in merror:
-      print "   Resubmitting member %d" % mem
+      print("   Resubmitting member %d" % mem)
       os.chdir('%s/m%d' % (dir_members,mem))
       os.system('rm -rf rsl.*')
       # May need to reset environment variables here
@@ -253,7 +253,7 @@ if silent:
       # Master control lock -- check to see if this file exists                              
       # If it doesn't exist, exit the program                                                
       if not os.path.exists('%s/AUTO_RUN_IN_PROGRESS' % dir_wrf_dom):                        
-          print "File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting."          
+          print("File 'AUTO_RUN_IN_PROGRESS' is not present in main dir.  Exiting."          )
           exit(0) 
 
       # Check the status for the date specified
@@ -261,23 +261,23 @@ if silent:
       if len(merror)>0 and resub:
          # If some members have crashed (more than zero members in merror), resubmit
          # (if flag is set)
-         print >>logfile, ""
-         print >>logfile, "Resubmitting crashed members:", merror
-         print >>logfile, ""
+         logfile.write("\n")
+         logfile.write("Resubmitting crashed members:", merror,"\n")
+         logfile.write('\n')
          # Call the resubmit function
          resubmit(merror)
 
       if timecheck == 180:
          # Periodically write to the log file
          nowtm = datetime.datetime.now()
-         print >>logfile, ""
-         print >>logfile, "***  Status as of %s  ***" % nowtm.strftime('%m/%d  %I:%M:%S %p') 
-         print >>logfile, "-----------------------------------------"
-         print >>logfile, "   %02d Members done: " % len(mdone), mdone
-         print >>logfile, "   %02d Members in progress: " % len(mnotdone), mnotdone
-         print >>logfile, "   %02d Members not started: " % len(mnotstart), mnotstart
-         print >>logfile, "   %02d Members crashed: " % len(merror), merror
-         print >>logfile, ""
+         logfile.write("\n")
+         logfile.write("***  Status as of %s  ***\n" % nowtm.strftime('%m/%d  %I:%M:%S %p') )
+         logfile.write("-----------------------------------------\n")
+         logfile.write("   %02d Members done: " % len(mdone), mdone, "\n")
+         logfile.write("   %02d Members in progress: " % len(mnotdone), mnotdone, "\n")
+         logfile.write("   %02d Members not started: " % len(mnotstart), mnotstart, "\n")
+         logfile.write("   %02d Members crashed: " % len(merror), merror, "\n")
+         logfile.write("\n")
          timecheck = 0
 
       timecheck = timecheck + 1
@@ -291,10 +291,10 @@ if silent:
    if len(mdone) == Ne:
       # If all files are done...
       nowtm = datetime.datetime.now()
-      print >>logfile, ""
-      print >>logfile, "***  Status as of %s  ***" % nowtm.strftime('%m/%d  %I:%M:%S %p') 
-      print >>logfile, "******* ALL FILES PRESENT *******"
-      print "******* ALL FILES PRESENT *******"
+      logfile.write("\n")
+      logfile.write("***  Status as of %s  ***\n" % nowtm.strftime('%m/%d  %I:%M:%S %p')) 
+      logfile.write("******* ALL FILES PRESENT *******\n")
+      print("******* ALL FILES PRESENT *******")
       # Now check for any NANed members
       # Using the check_complete_wrf function
       nanmems = check_complete_wrf(datestr) 
@@ -306,7 +306,7 @@ if silent:
               os.system('cp %s/m%d/wrfbdy_d01 %s/m%d/wrfbdy_d01' % (dir_members,(mem-1),dir_members,mem))
               datedt = datetime.datetime.strptime(datestr,'%Y%m%d%H')
               os.system('rm %s/m%d/wrfout_d01_%s' % (dir_members,mem,datedt.strftime('%Y-%m-%d_%H:00:00')))
-          print >>logfile, "Resubmitting NANed members:", nanmems
+          logfile.write("Resubmitting NANed members:", nanmems, "\n")
           resubmit(nanmems)
           # Wait for the nan-ed members to finish
           for mem in nanmems:
@@ -326,9 +326,9 @@ if silent:
       # We only go here if the while loop somehow exited but
       # not all ensemble members were actually done.
       nowtm = datetime.datetime.now()
-      print >>logfile, ""
-      print >>logfile, "***  Status as of %s  ***" % nowtm.strftime('%m/%d  %I:%M:%S %p') 
-      print >>logfile, "Problem occurred--not all files present.  Ending."
+      logfile.write("\n")
+      logfile.write("***  Status as of %s  ***\n" % nowtm.strftime('%m/%d  %I:%M:%S %p')) 
+      logfile.write("Problem occurred--not all files present.  Ending.\n")
       os.system('touch ensemble_error_%s' % datestr)
       exit(1)
  
@@ -339,22 +339,22 @@ else:
    # Status of the ensemble 
    mdone, mnotdone, mnotstart, merror = chkstat(datestr)
    nowtm = datetime.datetime.now()
-   print ""
-   print "***  Status as of %s  ***" % nowtm.strftime('%m/%d  %I:%M:%S %p') 
-   print "-----------------------------------------"
-   print "   %02d Members done: " % len(mdone), mdone
-   print "   %02d Members in progress: " % len(mnotdone), mnotdone
-   print "   %02d Members not started: " % len(mnotstart), mnotstart
-   print "   %02d Members crashed: " % len(merror), merror
-   print ""
+   print("")
+   print("***  Status as of %s  ***" % nowtm.strftime('%m/%d  %I:%M:%S %p') )
+   print("-----------------------------------------")
+   print("   %02d Members done: " % len(mdone), mdone)
+   print("   %02d Members in progress: " % len(mnotdone), mnotdone)
+   print("   %02d Members not started: " % len(mnotstart), mnotstart)
+   print("   %02d Members crashed: " % len(merror), merror)
+   print("")
 
    if len(mdone) >= int(Ne):
       # If all members happen to be done, check for NAN-ed members
-      print "******* ALL FILES PRESENT *******"
-      print ""
+      print("******* ALL FILES PRESENT *******")
+      print("")
       # Now check for any NANed members
       nanmems = check_complete_wrf(datestr) 
-      print nanmems
+      print(nanmems)
       if len(nanmems) > 0:
           resub = raw_input("Resubmit NAN members (0 or 1)?  ")
           if int(resub) == 1:
