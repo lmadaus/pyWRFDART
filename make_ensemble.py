@@ -101,10 +101,14 @@ def main():
         # Copy the input file as fg
         print("Copying in wrfinput and wrfbdy files...")
         for dom in range(int(max_dom)+1)[1:]:
-            os.system('cp %s/mems/mean/wrfinput_d0%d .' % (DOMDIR,dom))
+            #os.system('cp %s/mems/mean/wrfinput_d0%d .' % (DOMDIR,dom))
+            os.system('cp /glade/scratch/schwartz/stella/ensf/2017031400/wrf_rundir/ens_{:d}/wrfinput_d{:02d} .'.format(k,dom))
+        os.system('cp /glade/scratch/schwartz/stella/ensf/2017031400/wrf_rundir/ens_{:d}/wrfout_d02_2017-03-14_00:00:00.gz .'.format(k))
+        os.system('gunzip wrfout_d02_2017-03-14_00:00:00.gz')
+        os.system('mv wrfout_d02_2017-03-14_00:00:00 wrfinput_d02')
         #os.system('mv wrfinput_d01 fg')
         # Copy in the wrfbdy file
-        os.system('cp %s/mems/mean/wrfbdy_d01 .' % DOMDIR)
+        os.system('cp /glade/scratch/schwartz/stella/ensf/2017031400/wrf_rundir/ens_{:d}/wrfbdy_d01 .'.format(k))
 
         # Link in executables
         for f in tables:

@@ -13,10 +13,10 @@ parser.add_argument('-m','--mems', nargs='+', dest='mems', help='Only submit the
 
 
 args = parser.parse_args()
-startdate = datetime.strptime(args.startdate,'%Y%m%d%H')
+startdate = datetime.strptime(args.startdate,'%Y%m%d%H%M%S')
 tdelt = timedelta(minutes=int(fct_len))
 enddate = startdate + tdelt
-
+print(startdate, enddate)
 gzipped_flag = False
 
 submit_mems = args.mems
@@ -86,8 +86,8 @@ def lsf_submit(mem):
         outfile.write("cd {:s}/m{:d}\n".format(dir_members,mem))
         outfile.write("\n")
         outfile.write("# Set the start and end time environment variables\n")
-        outfile.write("setenv STARTDATE {:%Y%m%d%H}\n".format(startdate))
-        outfile.write("setenv ENDDATE {:%Y%m%d%H}\n".format(enddate))
+        outfile.write("setenv STARTDATE {:%Y%m%d%H%M%S}\n".format(startdate))
+        outfile.write("setenv ENDDATE {:%Y%m%d%H%M%S}\n".format(enddate))
         outfile.write("\n")
         outfile.write("# Run the python run_member script\n")
         outfile.write("{:s}/m{:d}/m{:d}_run_member.py\n".format(dir_members, mem, mem))
@@ -108,9 +108,9 @@ def pbs_submit(mem):
         outfile.write('#PBS -A {:s}\n'.format(NCAR_GAU_ACCOUNT))
         outfile.write('#PBS -l walltime={:s}\n'.format(ADVANCE_TIME_MEMBER))
         outfile.write('#PBS -q {:s}\n'.format(ADVANCE_QUEUE_MEMBER))
-        outfile.write('#PBS -j oe\n')
-        outfile.write('#PBS -m abe\n')
-        outfile.write('#PBS -M {:s}@ucar.edu\n'.format(getuser()))
+        #outfile.write('#PBS -j oe\n')
+        #outfile.write('#PBS -m abe\n')
+        #outfile.write('#PBS -M {:s}@ucar.edu\n'.format(getuser()))
         outfile.write('#PBS -l select={:d}:ncpus={:d}:mpiprocs={:d}\n'.format(nnodes_member, numprocs_per_node, numprocs_per_node))
         outfile.write("#==================================================================\n")
         outfile.write("\n")
@@ -118,8 +118,8 @@ def pbs_submit(mem):
         outfile.write("cd {:s}/m{:d}\n".format(dir_members,mem))
         outfile.write("\n")
         outfile.write("# Set the start and end time environment variables\n")
-        outfile.write("setenv STARTDATE {:%Y%m%d%H}\n".format(startdate))
-        outfile.write("setenv ENDDATE {:%Y%m%d%H}\n".format(enddate))
+        outfile.write("setenv STARTDATE {:%Y%m%d%H%M%S}\n".format(startdate))
+        outfile.write("setenv ENDDATE {:%Y%m%d%H%M%S}\n".format(enddate))
         outfile.write("\n")
         outfile.write("# Run the python run_member script\n")
         outfile.write("{:s}/m{:d}/m{:d}_run_member.py\n".format(dir_members, mem, mem))

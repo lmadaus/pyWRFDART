@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import re
 sys.path.append('/glade/p/work/lmadaus/DOMAINS/ncar_ensemble')
 from WRF_dart_param import *
-from namelist_utils import read_namelist, write_namelist
+from namelist_utils import read_namelist, write_namelist, update_time_wrf
 
 """
 # New master script that will run all member-specific tasks on the queue
@@ -28,10 +28,10 @@ from namelist_utils import read_namelist, write_namelist
 
 PRE_CLEAN   = True
 DART_TO_WRF = False 
-PROCESS_BCS = True
+PROCESS_BCS = False
 RUN_WRF     = True
 POST_WRF    = False
-WRF_TO_DART = True
+WRF_TO_DART = False
 
 
 
@@ -81,7 +81,10 @@ def main():
             wrf_prep(memnum, startdate, enddate)
             print("Updating boundary conditions")
             update_bcs(memnum,startdate)
-   
+  
+        else:
+            wrf_prep(memnum, startdate, enddate)
+
     # Run WRF
     if RUN_WRF:
         print("Running WRF")
@@ -187,8 +190,8 @@ def get_basic_info():
     start = int(os.environ['STARTDATE'])
     end = int(os.environ['ENDDATE'])
 
-    startdt = datetime.strptime(str(start),'%Y%m%d%H')
-    enddt = datetime.strptime(str(end),'%Y%m%d%H')
+    startdt = datetime.strptime(str(start),'%Y%m%d%H%M%S')
+    enddt = datetime.strptime(str(end),'%Y%m%d%H%M%S')
     
 
     # Try to find the member based on the directory we are in
@@ -324,19 +327,33 @@ def wrf_prep(mem,start,end):
 
     """
     from netCDF4 import Dataset
-    for dn in range(1, max_dom+1):
-        # Open the wrfinput file and be sure that the start time is right
-        with Dataset('wrfinput_d{:02d}'.format(dn), 'r') as wrfin:
-            filetime = wrfin.variables['Times'][0]
-        timestr = ''.join([x.decode('utf-8') for x in list(filetime)]).strip() 
-        wrfin_time = datetime.strptime(timestr, '%Y-%m-%d_%H:%M:%S')
-        if wrfin_time != start:
-            error_handler('wrfinput_d{:02d} time ({:%Y%m%d%H}) does not match start time ({:%Y%m%d%H}) for mem {:d}'.format(dn,wrfin_time, start, mem), 'wrf_prep')
+    # check if this is a restart
+    # Start by reading in the master from the main directory
+    nmld = read_namelist('{:s}/namelist.input'.format(dir_wrf_dom))
+    
+    if nmld['time_control']['restart']:
+        # This is a restart.  Check to see that a restart file exists for this time.
+        allfiles = os.listdir('.')
+        for dn in range(1,max_dom+1):
+            rstfile = 'wrfrst_d{:02d}_{:%Y-%m-%d_%H:%M:%S}'.format(dn, start)
+            if rstfile not in allfiles:
+                error_handler('Restart file for domain {:02d} and time ({:%Y%m%d%H}) not found for mem {:d}'.format(dn,start, mem), 'wrf_prep')
+
+
+    else:
+        # Check that wrfinput is at the right time
+        for dn in [1]:#range(1, max_dom+1):
+            # Open the wrfinput file and be sure that the start time is right
+            with Dataset('wrfinput_d{:02d}'.format(dn), 'r') as wrfin:
+                filetime = wrfin.variables['Times'][0]
+            timestr = ''.join([x.decode('utf-8') for x in list(filetime)]).strip() 
+            wrfin_time = datetime.strptime(timestr, '%Y-%m-%d_%H:%M:%S')
+            if wrfin_time != start:
+                error_handler('wrfinput_d{:02d} time ({:%Y%m%d%H}) does not match start time ({:%Y%m%d%H}) for mem {:d}'.format(dn,wrfin_time, start, mem), 'wrf_prep')
 
 
     # Write the namelist
-    nmld = read_namelist('namelist.input')
-    nmld = update_wrf_time(nmld, start, end)
+    nmld = update_time_wrf(nmld, start, end)
     write_namelist(nmld, 'namelist.input')
     #os.system('./write_namelists.py -d %s -l %d -p -e %d' % (start.strftime('%Y%m%d%H'),dtime_hours, mem))
     if not os.path.exists('namelist.input'):
@@ -521,9 +538,9 @@ def write_dart_namelist(mem,dtime):
 
     # Link in the WRF_dart_param file
     if not os.path.exists('WRF_dart_param.py'):
-        os.system('ln -sf %s/wrfdart/WRF_dart_param.py' % (dir_wrf_dom))
+        os.system('ln -sf %s/WRF_dart_param.py' % (dir_wrf_dom))
     if not os.path.exists('WRF_dart_obtypes.py'):
-        os.system('ln -sf %s/wrfdart/WRF_dart_obtypes.py' % (dir_wrf_dom))
+        os.system('ln -sf %s//WRF_dart_obtypes.py' % (dir_wrf_dom))
     
     # Link in make_namelist_dart
     if not os.path.exists('make_namelist_dart.py'):

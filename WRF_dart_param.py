@@ -8,7 +8,7 @@ import os
 #
 #*******************************************************************************
 
-exp_name='july27'                # Name of the experiment
+exp_name='ncar_ensemble'                # Name of the experiment
  
 #**************************************************************
 #
@@ -24,7 +24,7 @@ flag_make_icbc        = False      # True to create initial and boundary conditi
 flag_make_obs_seq     = False      # True to create obs. seq. files (NOT ENABLED)
 flag_make_opcen       = False      # True to interpolate grib files to grid (NOT ENABLED)
 
-flag_pert_bcs         = True      # True to run pert_wrf_bc.  If false, will still run
+flag_pert_bcs         = False      # True to run pert_wrf_bc.  If false, will still run
                                    # update_wrf_bc
 
 flag_compute_tendency = False      # True to compute the altimeter tendencies for each wrfout
@@ -49,9 +49,9 @@ flag_direct_netcdf_io = True       # Use experimental DART IO to read/write
 #   model itself
 #
 #**************************************************************
-max_dom            = 1         # maximum number of domains
+max_dom            = 2         # maximum number of domains
 dt                 = 20           # model time step (in sec)
-grid_resolutions   = [3000,1000]
+grid_resolutions   = [15000,3000]
 wrfout_int        = 60           # Interval to write wrfout files (in MINUTES)
 dlbc              = 60        	 # Interval of global boundary conditions (in MINUTES)
 #**************************************************************
@@ -61,10 +61,11 @@ dlbc              = 60        	 # Interval of global boundary conditions (in MIN
 #   original papers or Hamill's review paper.
 #
 #**************************************************************
-date_start        = '2014072600' # Start of the experiment (YYYYMMDDHH)
-date_end          = '2014072912' # End of the experiment (YYYYMMDDHH)
-Ne                = 50           # Number of ensemble members
-fct_len           = 60          # Time between 2 assimilation (in MINUTES)
+date_start        = '2017051612' # Start of the experiment (YYYYMMDDHH)
+date_end          = '2017051600' # End of the experiment (YYYYMMDDHH)
+Ne                = 30           # Number of ensemble members
+fct_len           = 60*12          # Time between 2 assimilation (in MINUTES)
+#fct_len           = 10          # Time between 2 assimilation (in MINUTES)
 N_assim           = 500          # Number of assimilations (spinup=0)
 N_assim_max       = 500          # Maximum number of assimilations 
 
@@ -291,7 +292,7 @@ ens_bc_pscale='0.65'         # perturbation scale for WRF-VAR 48 hr forecast
 #   dir parameter below.
 #**************************************************************  
 
-dir            = '/home/disk/pvort/lmadaus/nobackup/WRF' # MAIN DIRECTORY
+dir            = '/glade/u/home/lmadaus' # MAIN DIRECTORY
 dir_wrf_dom    = dir + '/DOMAINS/' + exp_name            # Directory where main experiment is run 
 dir_longsave   = dir_wrf_dom + '/longsave'               # storage directory 
 dir_obs        = dir_wrf_dom + '/obs'                    # repository of obs.
@@ -301,12 +302,12 @@ dir_assim      = dir_wrf_dom + '/assimilation'           # Directory where DART 
 
 # Directories where WRF, WRFDA and DART are found
 WRFVARDIR         = dir + '/WRFDA'
-WRFRUNDIR         = dir + '/WRFV3/run'
+WRFRUNDIR         = dir + '/WRFV3_ncar/run'
 dir_src_wps       = dir + '/WPS'                    # WPS location
 dir_src_wps_geog  = dir + '/DATA/geog'              # Location of geo data for WPS
-dir_src_wrf       = dir + '/WRFV3/main'             # WRF location
+dir_src_wrf       = dir + '/WRFV3_ncar/main'             # WRF location
 dir_src_wrfvar    = dir + '/WRFDA/var'                  # WRF-VAR location
-dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are located
+dir_src_dart      = dir + '/DART_Manhattan/models/wrf/work'   # Where DART executables are located
 
 
 #**************************************************************
@@ -319,25 +320,40 @@ dir_src_dart      = dir + '/DART/models/wrf/work'   # Where DART executables are
 #  number of processors come from here
 #**************************************************************  
 
-cluster_name        = 'enkf'                   # name of cluster nodes
-mpi_run_command     = '/usr/rels/openmpi/bin/mpirun' # Command to run MPI
-queue_members       = 'reg'                    # Queue to run members in
-queue_filter        = 'reg'                    # Queue to run filter in          
-mpi_numprocs_member = 16                       # Number of processors for member
+cluster_name        = 'cheyenne'                   # name of cluster nodes
+#mpi_run_command     = 'mpirun.lsf' # Command to run MPI
+mpi_run_command     = 'mpiexec_mpt' # Command to run MPI
+queue_members       = 'regular'                    # Queue to run members in
+queue_filter        = 'regular'                    # Queue to run filter in     
+numprocs_per_node   = 36                   # Number of processors on each node of the system
+mpi_numprocs_member = 512                       # Number of processors for member
 mpi_numprocs_filter = 128                       # Number of processors for filter
-mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
+#mpi_numprocs_flag   = '-np %d' % mpi_numprocs_member      # Flag for numprocs in code
                                                           # for member.  Bluefire does
                                                           # blank for bluefire
+mpi_numprocs_flag = ''
+# Calculation to figure out how many nodes to request
+nnodes_member = mpi_numprocs_member // numprocs_per_node
+if mpi_numprocs_member < numprocs_per_node:
+    nnodes_member = 1
+elif mpi_numprocs_member % numprocs_per_node !=0:
+    nnodes_member += 1
+
+nnodes_filter = mpi_numprocs_filter // numprocs_per_node
+if mpi_numprocs_filter < numprocs_per_node:
+    nnodes_filter = 1
+elif mpi_numprocs_filter % numprocs_per_node !=0:
+    nnodes_filter += 1
 
 # Extra parameters for running on Bluefire
-NCAR_GAU_ACCOUNT     = '0'                   # Account to charge to at NCAR
-ADVANCE_TIME_FILTER  = '0:45'                # Estimate of time for filter to run
-ADVANCE_TIME_MEMBER  = '0:20'                # Estimate of time for a single member to run 
+NCAR_GAU_ACCOUNT     = 'NASP0002'                   # Account to charge to at NCAR
+ADVANCE_TIME_FILTER  = '0:45:00'                # Estimate of time for filter to run
+ADVANCE_TIME_MEMBER  = '2:00:00'                # Estimate of time for a single member to run 
 ADVANCE_QUEUE_FILTER = queue_filter          # Name of NCAR queue to use for filter 
 ADVANCE_QUEUE_MEMBER = queue_members         # Name of NCAR queue to use for members
 ADVANCE_CORES_FILTER = mpi_numprocs_filter  # Number of cores to use (multiples of 32)
 ADVANCE_CORES_MEMBER = mpi_numprocs_member  # Number of cores to use (multiples of 32)
-NCAR_ADVANCE_PTILE   = '32'                  # How many processes per core on Bluefire
+NCAR_ADVANCE_PTILE   = '16'                  # How many processes per core on Bluefire
 
 
 
@@ -381,7 +397,7 @@ wps_namelist['share'] = {
     }
 
 wps_namelist['geogrid'] = {
-    'parent_id'         :   [1] + range(1,max_dom),
+    'parent_id'         :   [1] + list(range(1,max_dom)),
     'parent_grid_ratio' :   [int(grid_resolutions[0] / n) for n in grid_resolutions],
     'i_parent_start'    :   [0,  93],
     'j_parent_start'    :   [0,  50],
@@ -438,8 +454,8 @@ wrf_namelist['domains'] = {
     'e_vert'                  : [51] * max_dom,
     'dx'                      : grid_resolutions,
     'dy'                      : grid_resolutions,
-    'grid_id'                 : range(1,max_dom+1),
-    'parent_id'               : range(max_dom),
+    'grid_id'                 : list(range(1,max_dom+1)),
+    'parent_id'               : list(range(max_dom)),
     'i_parent_start'          : wps_namelist['geogrid']['i_parent_start'],
     'j_parent_start'          : wps_namelist['geogrid']['j_parent_start'],
     'parent_grid_ratio'       : wps_namelist['geogrid']['parent_grid_ratio'],
