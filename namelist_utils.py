@@ -297,6 +297,43 @@ def write_dart_namelist(nmld=None, mem=1, date=None, window_minutes=15, outname=
 
 
 if __name__ == '__main__':
-    nmld = read_namelist('input.nml')
-    write_dart_namelist(nmld,date=datetime(2014,8,12,12),outname='new_input.nml') 
+    # Assume this is a quick rewrite
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-d', type=str, dest='indate', default='2017031412', help='Date for namelists (YYYYMMDDHH)')
+    parser.add_argument('-l', type=int, dest='hrlen', default=24, help='Number of hours to integrate')
+    
+    # Sort out what we have rom the command line
+    args = parser.parse_args()
+    startdate = datetime.strptime(args.indate, '%Y%m%d%H')
+    hrlen = args.hrlen
+    enddate = startdate + timedelta(hours=hrlen)
+
+    # Try each of the namelists we can write
+    try:
+        nmld = read_namelist('DEFAULT_namelist.input')
+        nmld = update_time_wrf(nmld, startdate, enddate)
+        write_namelist(nmld, 'namelist.input')
+        print("Updated namelist.input")
+    except:
+        print("Could not process namelist.input.  Skipping.")
+
+    try:
+        nmld = read_namelist('DEFAULT_namelist.wps')
+        nmld = update_time_wps(nmld, startdate, enddate)
+        write_namelist(nmld, 'namelist.wps')
+        print("Updated namelist.wps")
+    except:
+        print("Could not process namelist.wps.  Skipping.")
+
+    
+    try:
+        nmld = read_namelist('DEFAULT_input.nml')
+        write_dart_namelist(nmld, date=startdate, outname='input.nml')
+        print("Updated input.nml")
+    except:
+        print("Could not process input.nml.  Skipping.")
+    
+    #nmld = read_namelist('input.nml')
+    #write_dart_namelist(nmld,date=datetime(2014,8,12,12),outname='new_input.nml') 
     #print(nmld['model_nml'])

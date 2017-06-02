@@ -28,7 +28,7 @@ from namelist_utils import read_namelist, write_namelist, update_time_wrf
 
 PRE_CLEAN   = True
 DART_TO_WRF = False 
-PROCESS_BCS = False
+PROCESS_BCS = True
 RUN_WRF     = True
 POST_WRF    = False
 WRF_TO_DART = False
@@ -68,7 +68,10 @@ def main():
     if flag_pert_bcs:
         if PROCESS_BCS:
             print("Perturbing boundary conditions")
-            perturb_bcs(memnum, startdate, enddate)
+            if use_pert_bank:
+                perturb_bcs_from_bank(memnum, startdate, enddate)
+            else:
+                perturb_bcs(memnum, startdate, enddate)
         if RUN_WRF:
             print("Prepping for WRF")
             wrf_prep(memnum, startdate, enddate)
@@ -201,6 +204,83 @@ def get_basic_info():
     return mem, startdt, enddt
 
 
+def perturb_bcs_from_bank(mem, start, end):
+    """
+    Simple utility to use pre-computed perturbations from a perturbation bank
+    to perturb the member and the bcs
+    Requires met_em files to exist for entire duration of the run to enable
+    perturbations
+    
+    In WRF_dart_param, set
+    use_pert_bank = True
+    pert_bank_path = Path to pertubation bank
+    """
+    import random
+
+    # Link in the DART utility for updating boundary conditions
+    if not os.path.exists('pert_wrf_bc'):
+        os.system('ln -sf {:s}/pert_wrf_bc .'.format(dir_src_dart))
+    # Make a copy of the template input.nml
+    dartnml = read_namelist('{:s}/TEMPLATE_input.nml'.format(dir_wrf_dom))
+    write_namelist(dartnml, 'input.nml')
+
+
+    pert_scales = {'T' : 1.0,
+                   'U' : 1.0,
+                   'V' : 1.0,
+                   'QVAPOR' : 1.0,
+                   'MU' : 0.5,
+    }
+    pert_files = [f for f in os.listdir(pert_bank_path) if f.startswith('pert_member')]
+
+    # Find the files we need to perturb
+    validtimes = []
+    now = start
+    while now <= end:
+        validtimes.append(now)
+        now += timedelta(minutes=dlbc)
+
+    # Move the actual wrfinput file to a safe place
+    for dn in range(1,max_dom+1):
+        os.system('mv wrfinput_d{:02d} USE_wrfinput_d{:02d}'.format(dn, dn))
+    # Make a safe copy of the bc file
+    os.system('cp wrfbdy_d01 ORIG_wrfbdy_d01')
+    os.system('mv wrfbdy_d01 wrfbdy_this')
+
+    # Copy in the met_em files
+    # Loop through all the met_em files
+    metem_files = ['{:%Y%m%d%H}_wrfinput_d01'.format(dir_wrf_dom, d) for d in validtimes]
+    for fnum, metem in enumerate(metem_files):
+        os.system('cp {:s}/{:s} .').format(dir_wrf_dom, metem)
+        metds = Dataset(metem, 'a')
+        # Pick a random perturbation pattern from these options
+        usepert = random.choice(pert_files)
+        with Dataset('{:s}/{:s}'.format(pert_bank_path, usepert), 'r') as pertds:
+            for svar, scale in pert_scales.items:
+                # Add the scaled perturbation to the metem files
+                metds.variables[svar][:] = metds.variables[svar][:] + (pertds[svar][:] * scale)
+        metds.close()
+        # Run the program to update the bcs
+        if fnum != 0:
+            if os.path.exists('wrfinput_this'):
+                os.system('rm wrfinput_this')
+            if os.path.exists('wrfinput_next'):
+                os.system('rm wrfinput_next')
+            os.system('ln -sf {:s} wrfinput_this'.format(metem_files[fnum-1]))
+            os.system('ln -sf {:s} wrfinput_next'.format(metem))
+            os.system('./pert_wrf_bc')
+    
+    # Clean up
+    os.system('rm wrfinput_this wrfinput_next')
+    os.system('mv wrfbdy_this wrfbdy_d01')
+
+    # Move back the original wrfinputs
+    for dn in range(1,max_dom+1):
+        os.system('mv USE_wrfinput_d{:02d} wrfinput_d{:02d}'.format(dn, dn))
+    
+    print("Successfully perturbed boundary conditions using perturbation bank")
+
+
 def perturb_bcs(mem,start,end):
     """ Function to run the BC perturbation sequence.  Uses fixed-covariance
         perturbations through the WRF-VAR framework.  Requires a met_em.d01 file
@@ -219,16 +299,15 @@ def perturb_bcs(mem,start,end):
     os.system('mv wrfinput_d01 wrfinput_d01_orig')
 
     # Copy in the met_em file for the right end time
-    #if not os.path.exists('%s/met_em.d01.%s.nc' % (dir_wrf_dom,end.strftime('%Y-%m-%d_%H:%M:%S'))):
-    #    error_handler('Unable to find met_em.d01 file for end time %s' % datef, \
-    #                  'perturb_bcs') 
-    #os.system('cp %s/met_em.d01.%s.nc .' % (dir_wrf_dom, end.strftime('%Y-%m-%d_%H:%M:%S')))
+    if not os.path.exists('%s/met_em.d01.%s.nc' % (dir_wrf_dom,end.strftime('%Y-%m-%d_%H:%M:%S'))):
+        error_handler('Unable to find met_em.d01 file for end time %s' % datef, \
+                      'perturb_bcs') 
+    os.system('ln -sf  %s/met_em.d01.%s.nc .' % (dir_wrf_dom, end.strftime('%Y-%m-%d_%H:%M:%S')))
 
     # Write the namelist and use real.exe to convert met_em file to wrfinput file
     #if not os.path.exists('write_namelists.py'):
     #   os.system('ln -sf %s/write_namelists.py .' % dir_wrf_dom)
     #os.system('./write_namelists.py -d %s -l 0 -p -f' % datef)
-    nmld = read_namelist('namelist.input')
     #print("Running real.exe for BC end time")
     #os.system('ln -sf %s/real.exe real.exe' % dir_src_wrf)
     #os.system('%s %s ./real.exe' % (mpi_run_command, mpi_numprocs_flag))
@@ -239,14 +318,17 @@ def perturb_bcs(mem,start,end):
     #                  'perturb_bcs')
 
     # Perturb this new wrfinput using wrfda
-    #os.system('mv wrfinput_d01 fg')
+    os.system('mv wrfinput_d01 fg')
     # ADDITIONS HERE FOR PRE-EXISTING WRFINPUT and WRFBDY
-    os.system('cp %s/archive_bdy/%s_wrfinput_d01 fg' % (dir_wrf_dom,datef))
-    os.system('cp %s/archive_bdy/%s_wrfbdy_d01 wrfbdy_d01' % (dir_wrf_dom,datem))
+    #os.system('cp wrfinput_d01 fg' % (dir_wrf_dom,datef))
+    #os.system('cp %s/archive_bdy/%s_wrfbdy_d01 wrfbdy_d01' % (dir_wrf_dom,datem))
 
     bcint_hours = int(dlbc/60)
-    #os.system('./write_namelists.py -d %s -e %d -l %d -f -p' % (datef,mem,bcint_hours))
-    #os.system('./write_namelists.py -d %s -e %d -l %d -f -p' % (datef,mem,0))
+    
+    # Edit the namelist here 
+    nmld = read_namelist('namelist.input')
+    
+
     os.system('ln -sf %s/build/da_wrfvar.exe da_wrfvar.exe' % dir_src_wrfvar)
     os.system('ln -sf %s/run/be.dat.cv3 be.dat' % dir_src_wrfvar)
     print("Running da_wrfvar.exe")
